@@ -45,5 +45,9 @@ func SolicitarEtiqueta(req events.APIGatewayProxyRequest) (*events.APIGatewayPro
 }
 
 func HandleUnsupportedMethod() (*events.APIGatewayProxyResponse, error) {
-	return apiResponse(http.StatusBadRequest, nil)
+	errorBody := ErrorResponse{
+		Message: "Método inválido, utilize somente POST",
+	}
+
+	return apiResponse(http.StatusBadRequest, errorBody)
 }

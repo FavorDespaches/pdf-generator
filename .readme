@@ -1,0 +1,7 @@
+# PARA TESTAR LOCALMENTE:
+- sam build
+- sam local invoke PDFGeneratorFunction -e events/event.json
+
+# PARA SUBIR UMA NOVA VERSÃO
+Diriga-se para pdf-generator/cmd e rode o comando:
+- GOARCH=amd64 GOOS=linux go build main.go

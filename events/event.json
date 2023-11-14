@@ -2,9 +2,6 @@
 	"resource": "/my/path",
 	"path": "/my/path",
 	"httpMethod": "POST",
-	"headers": {
-		"Content-Type": "application/json"
-	},
 	"multiValueHeaders": {
 		"Content-Type": ["application/json"]
 	},

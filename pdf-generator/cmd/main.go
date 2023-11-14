@@ -1,6 +1,8 @@
 package main
 
 import (
+	"strings"
+
 	"github.com/FavorDespaches/pdf-generator/pkg/handlers"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -11,11 +13,12 @@ func main() {
 }
 
 func handler(req events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
-	switch req.HTTPMethod {
+
+	switch strings.ToUpper(req.HTTPMethod) {
 	case "GET":
 		return handlers.HandleUnsupportedMethod()
 	case "POST":
-		return handlers.SolicitarEtiqueta(req)
+		return handlers.SolicitarEtiqueta(req) //handlers.SolicitarEtiqueta(req)
 	case "PUT":
 		return handlers.HandleUnsupportedMethod()
 	case "DELETE":
