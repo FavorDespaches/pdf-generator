@@ -1,0 +1,55 @@
+{
+	"resource": "/my/path",
+	"path": "/my/path",
+	"httpMethod": "POST",
+	"headers": {
+		"Content-Type": "application/json"
+	},
+	"multiValueHeaders": {
+		"Content-Type": ["application/json"]
+	},
+	"queryStringParameters": {
+		"foo": "bar"
+	},
+	"multiValueQueryStringParameters": {
+		"foo": ["bar"]
+	},
+	"pathParameters": {
+		"proxy": "/my/path"
+	},
+	"stageVariables": {
+		"baz": "qux"
+	},
+	"requestContext": {
+		"resourceId": "123456",
+		"resourcePath": "/my/path",
+		"httpMethod": "POST",
+		"extendedRequestId": "request-id",
+		"requestTime": "12/Apr/2020:19:34:56 +0000",
+		"path": "/prod/my/path",
+		"accountId": "123456789012",
+		"protocol": "HTTP/1.1",
+		"stage": "prod",
+		"domainPrefix": "testPrefix",
+		"requestTimeEpoch": 1586728496000,
+		"requestId": "1234567-id",
+		"identity": {
+			"cognitoIdentityPoolId": null,
+			"accountId": null,
+			"cognitoIdentityId": null,
+			"caller": null,
+			"sourceIp": "IP",
+			"principalOrgId": null,
+			"accessKey": null,
+			"cognitoAuthenticationType": null,
+			"cognitoAuthenticationProvider": null,
+			"userArn": null,
+			"userAgent": "Custom User Agent String",
+			"user": null
+		},
+		"domainName": "testPrefix.testDomain.com",
+		"apiId": "api-id"
+	},
+	"body": "{\"tipo_arquivo\":\"Postagem\",\"versao_arquivo\":\"2.3\",\"plp\":{\"id_plp\":0,\"cartao_postagem\":\"0076822516\"},\"remetente\":{\"nome_remetente\":\"Carioca Star\",\"cep_remetente\":\"13560648\",\"numero_remetente\":\"1762\",\"logradouro_remetente\":\"Rua Conde do Pinhal\",\"complemento_remetente\":\"Loja\",\"bairro_remetente\":\"Jardim São Carlos\",\"cidade_remetente\":\"São Carlos\",\"uf_remetente\":\"SP\",\"ciencia_conteudo_proibido\":\"S\",\"codigo_administrativo\":\"21431817\",\"numero_diretoria\":74,\"numero_contrato\":\"9912559667\"},\"forma_pagamento\":\"5\",\"objeto_postal\":[{\"codigo_servico_postagem\":\"03220\",\"peso\":20,\"destinatario\":{\"nome_destinatario\":\"Reda Ali Gharib\",\"logradouro_destinatario\":\"Rua Passos\",\"numero_end_destinatario\":\"249\",\"complemento_destinatario\":\"APTO - 132 Bloco  A\"},\"nacional\":{\"cep_destinatario\":\"03058010\",\"bairro_destinatario\":\"Belenzinho\",\"cidade_destinatario\":\"São Paulo\",\"uf_destinatario\":\"SP\"},\"dimensao_objeto\":{\"tipo_objeto\":\"001\",\"dimensao_altura\":40,\"dimensao_comprimento\":40,\"dimensao_largura\":40},\"servico_adicional\":{\"codigo_servico_adicional\":[\"025\",\"019\"],\"valor_declarado\":25},\"numero_etiqueta\":\"TI282421422BR\",\"cubagem\":0,\"restricao_anac\":\"S\",\"status_processamento\":\"0\"}],\"status_processamento\":\"0\"}",
+	"isBase64Encoded": false
+}

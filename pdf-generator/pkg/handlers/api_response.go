@@ -8,10 +8,9 @@ import (
 
 // Define the SuccessResponse structure
 type SuccessResponse struct {
-	IdPlp                    int      `json:"idPlp"`
-	Etiquetas                []string `json:"etiquetas"`
-	LabelBase64              string   `json:"labelBase64"`
-	ContentDeclarationBase64 string   `json:"contentDeclarationBase64"`
+	IdPlp       int      `json:"idPlp"`
+	Etiquetas   []string `json:"etiquetas"`
+	LabelBase64 string   `json:"labelBase64"`
 }
 
 // Define the ErrorResponse structure

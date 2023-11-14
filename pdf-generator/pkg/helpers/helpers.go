@@ -39,20 +39,23 @@ func DrawDottedLines(pdf *gofpdf.Fpdf) {
 
 	pdf.SetDashPattern([]float64{}, 0)
 }
+
 func DrawDottedLine(pdf *gofpdf.Fpdf, x1, y1, x2, y2 float64) {
 	pdf.MoveTo(x1, y1)
 	pdf.LineTo(x2, y2)
-	pdf.DrawPath("D") // "D" for draw (stroke) the path
+	pdf.DrawPath("D")
 }
+
+/*
 func addImage(pdf *gofpdf.Fpdf, imagePath string, x, y, width, height float64) {
 	options := gofpdf.ImageOptions{
-		ReadDpi:   true, // Use the DPI embedded in the image file
-		ImageType: "",   // An empty string means gofpdf will automatically detect the type
+		ReadDpi:   true,
+		ImageType: "",
 	}
 
-	// The "ImageOptions" function automatically detects the image type based on the file extension
 	pdf.ImageOptions(imagePath, x, y, width, height, false, options, 0, "")
 }
+*/
 
 // ! ===== PRIMEIRA LINHA DA ETIQUETA =====
 func DrawFirstRow(pdf *gofpdf.Fpdf, x, y float64, idPlp int) float64 {
@@ -64,9 +67,9 @@ func DrawFirstRow(pdf *gofpdf.Fpdf, x, y float64, idPlp int) float64 {
 	brandingX := dataMatrixX + dataMatrixSize + spaceBetween
 
 	//! TIPO SERVIÇO LOGO
-	//pdf.SetFillColor(255, 0, 0)
-	//pdf.Rect(tipoServicoX, y, tipoServicoSize, tipoServicoSize, "F")
-	addImage(pdf, "images/sedex-expresso.png", tipoServicoX, y, tipoServicoSize, tipoServicoSize)
+	pdf.SetFillColor(255, 0, 0)
+	pdf.Rect(tipoServicoX, y, tipoServicoSize, tipoServicoSize, "F")
+	//addImage(pdf, "pdf-generator/images/sedex-expresso.png", tipoServicoX, y, tipoServicoSize, tipoServicoSize)
 
 	idPlpX := tipoServicoX - 0.7
 	idPLpY := y + tipoServicoSize + 0.25
@@ -80,10 +83,10 @@ func DrawFirstRow(pdf *gofpdf.Fpdf, x, y float64, idPlp int) float64 {
 	pdf.Rect(dataMatrixX, y, dataMatrixSize, dataMatrixSize, "F")
 
 	//! LOGO FAVOR
-	//pdf.SetFillColor(200, 200, 200) // Light gray
-	//pdf.Rect(brandingX, y, logoWidth, logoHeight, "F")
-	addImage(pdf, "images/favor-logo.png", brandingX, y, logoWidth, logoHeight)
-	//pdf.SetFillColor(0, 0, 0)
+	pdf.SetFillColor(200, 200, 200) // Light gray
+	pdf.Rect(brandingX, y, logoWidth, logoHeight, "F")
+	pdf.SetFillColor(0, 0, 0)
+	//addImage(pdf, "pdf-generator/images/favor-logo.png", brandingX, y, logoWidth, logoHeight)
 
 	nextY := y + dataMatrixSize
 
@@ -94,7 +97,7 @@ func DrawSecondRow(pdf *gofpdf.Fpdf, x, y float64, peso float64) float64 {
 	spaceBetween := 12.0
 	lineHeight := 6.0
 
-	pedidoTextX := x - 0.7 // Remove 0.7 pois os textos possuem um pequeno padding
+	pedidoTextX := x - 0.7
 	pdf.SetXY(pedidoTextX, y)
 	pdf.SetFont("Arial", "", 8)
 	pdf.CellFormat(tipoServicoSize, lineHeight, "Pedido: 0", "", 0, "L", false, 0, "")
@@ -114,32 +117,31 @@ func DrawSecondRow(pdf *gofpdf.Fpdf, x, y float64, peso float64) float64 {
 	return nextY
 }
 
+// ! ===== CÓDIGO DE RASTREIO =====
 func DrawTrackingCode(pdf *gofpdf.Fpdf, x, y float64, trackingCode string) float64 {
-	pdf.SetFont("Arial", "B", 12) // Set the desired font and size
+	pdf.SetFont("Arial", "B", 12)
 
-	textWidth := pdf.GetStringWidth(trackingCode)   // Get the width of the tracking code text
-	var startX = (labelWidth / 2) - (textWidth / 2) // Calculate the starting X position
+	textWidth := pdf.GetStringWidth(trackingCode)
+	var startX = (labelWidth / 2) - (textWidth / 2)
 
-	if x == 0.0 {
+	if x != 0.0 {
 		startX += labelWidth
 	}
 
-	pdf.SetXY(startX, y)                                                  // Move to the starting position
-	pdf.CellFormat(textWidth, 10, trackingCode, "", 0, "C", false, 0, "") // Draw the cell with the tracking code centered
+	pdf.SetXY(startX, y)
+	pdf.CellFormat(textWidth, 10, trackingCode, "", 0, "C", false, 0, "")
 
 	return y + 8
 }
 
+// ! ========== BARRA DE CÓDIGO MAIOR ==========
 func DrawBarcodePlaceholder(pdf *gofpdf.Fpdf, x, y float64) float64 {
-	// Calculate the X coordinate to center the barcode
 	centerX := x + (labelWidth / 2) - (barcodeWidth / 2)
-
-	// Draw the barcode with 'D' for draw (stroke) the path
 	pdf.Rect(centerX, y, barcodeWidth, barcodeHeight, "D")
-
 	return y + barcodeHeight
 }
 
+// ! ========== ASSINATURAS ==========
 func DrawRecebedorAssinaturaDocumentoLines(pdf *gofpdf.Fpdf, x, y float64) float64 {
 	const RECEBEDOR = "Recebedor: "
 	const ASSINATURA = "Assinatura: "
@@ -183,11 +185,9 @@ func DrawRecebedorAssinaturaDocumentoLines(pdf *gofpdf.Fpdf, x, y float64) float
 	return nextY
 }
 
+// ! ========== DIVISOR DESTINATÁRIO ==========
 func DrawDestinatarioCorreiosLogoDivisor(pdf *gofpdf.Fpdf, x, y float64) float64 {
-	fmt.Println("DrawDestinatarioDivisor")
-	fmt.Println("x: ", x)
-	fmt.Println("y: ", y)
-
+	translator := pdf.UnicodeTranslatorFromDescriptor("")
 	const DESTINATARIO = "DESTINATÁRIO   "
 	destinatarioTextWidth := pdf.GetStringWidth(DESTINATARIO) + 10
 	lineHeight := 8.0
@@ -206,41 +206,43 @@ func DrawDestinatarioCorreiosLogoDivisor(pdf *gofpdf.Fpdf, x, y float64) float64
 	destinatarioTextX := x + 1
 	destinatarioTextY := y + (lineHeight / 2) + (pdf.PointConvert(fontSize) / 2) - 0.5
 	pdf.SetTextColor(255, 255, 255)
-	pdf.Text(destinatarioTextX, destinatarioTextY, DESTINATARIO)
+	pdf.Text(destinatarioTextX, destinatarioTextY, translator(DESTINATARIO))
 	pdf.SetTextColor(0, 0, 0)
 
 	//!TODO: Adicionar o logo dos correios
-	widthHeightRatio := 4781.0 / 958.0
-	imageWidth := 20.0
-	imageHeight := imageWidth / widthHeightRatio
-	addImage(pdf, "images/correios-logo.png", x+labelWidth-22, y+1, imageWidth, imageHeight)
+	//widthHeightRatio := 4781.0 / 958.0
+	//imageWidth := 20.0
+	//imageHeight := imageWidth / widthHeightRatio
+	//addImage(pdf, "pdf-generator/images/correios-logo.png", x+labelWidth-22, y+1, imageWidth, imageHeight)
 
 	return y + 8.0
 }
 
+// ! ========== DADOS DO DESTINATÁRIO ==========
 func DrawDadosDestinatario(pdf *gofpdf.Fpdf, x, y float64, destinatario types.Destinatario, nacional types.Nacional) float64 {
+	translator := pdf.UnicodeTranslatorFromDescriptor("")
 	fontSize := 9.0
 	lineHeight := 4.0
 	pdf.SetFont("Arial", "", fontSize)
 
 	nomeDestinatarioX := x
 	nomeDestinatarioY := y + lineHeight
-	nomeDestinatarioText := "Nelson Mendes Jr."
+	nomeDestinatarioText := translator("Nelson Mendes Jr.")
 	pdf.Text(nomeDestinatarioX, nomeDestinatarioY, nomeDestinatarioText)
 
 	logradouroDestinatarioX := x
 	logradouroDestinatarioY := nomeDestinatarioY + lineHeight
-	logradouroDestinatarioText := "Rua João Moreira da Costa, 12"
+	logradouroDestinatarioText := translator("Rua João Moreira da Costa, 12")
 	pdf.Text(logradouroDestinatarioX, logradouroDestinatarioY, logradouroDestinatarioText)
 
 	complementoBairroDestinatarioX := x
 	complementoBairroDestinatarioY := logradouroDestinatarioY + lineHeight
-	complementoBairroDestinatarioText := "Docvalle, Vila Resende"
+	complementoBairroDestinatarioText := translator("Docvalle, Vila Resende")
 	pdf.Text(complementoBairroDestinatarioX, complementoBairroDestinatarioY, complementoBairroDestinatarioText)
 
 	cepCidadeUfDestinatarioX := x
 	cepCidadeUfDestinatarioY := complementoBairroDestinatarioY + lineHeight*1.3
-	cepCidadeUfDestinatarioText := "12282-220 Caçapava/SP"
+	cepCidadeUfDestinatarioText := translator("12282-220 Caçapava/SP")
 	pdf.Text(cepCidadeUfDestinatarioX, cepCidadeUfDestinatarioY, cepCidadeUfDestinatarioText)
 
 	nextY := cepCidadeUfDestinatarioY + lineHeight
@@ -248,11 +250,13 @@ func DrawDadosDestinatario(pdf *gofpdf.Fpdf, x, y float64, destinatario types.De
 	return nextY
 }
 
+// ! ========== BARRA DE CÓDIGO DESTINATÁRIO ==========
 func DrawDestinatarioBarCodePlaceholder(pdf *gofpdf.Fpdf, x, y float64) float64 {
 	pdf.Rect(x, y, destinatarioBarCodeWidth, destinatarioBarCodeHeight, "D")
 	return y + destinatarioBarCodeHeight
 }
 
+// ! ========== SEPARADOR REMETENTE ==========
 func DrawSeparadorRemetente(pdf *gofpdf.Fpdf, x, y float64) float64 {
 	paddingTop := 6.0
 	paddingBottom := 4.0
@@ -265,29 +269,31 @@ func DrawSeparadorRemetente(pdf *gofpdf.Fpdf, x, y float64) float64 {
 	return nextY
 }
 
+// ! ========== DADOS DO REMETENTE ==========
 func DrawDadosRemetente(pdf *gofpdf.Fpdf, x, y float64, remetente types.Remetente) float64 {
+	translator := pdf.UnicodeTranslatorFromDescriptor("")
 	fontSize := 8.5
 	lineHeight := 3.5
 	pdf.SetFont("Arial", "", fontSize)
 
 	nomeRemetenteX := x
 	nomeRemetenteY := y
-	nomeRemetenteText := "Nelson Mendes Jr."
+	nomeRemetenteText := translator("Nelson Mendes Jr.")
 	pdf.Text(nomeRemetenteX, nomeRemetenteY, nomeRemetenteText)
 
 	logradouroRemetenteX := x
 	logradouroRemetenteY := nomeRemetenteY + lineHeight
-	logradouroRemetenteText := "Rua João Moreira da Costa, 12"
+	logradouroRemetenteText := translator("Rua João Moreira da Costa, 12")
 	pdf.Text(logradouroRemetenteX, logradouroRemetenteY, logradouroRemetenteText)
 
 	complementoBairroRemetenteX := x
 	complementoBairroRemetenteY := logradouroRemetenteY + lineHeight
-	complementoBairroRemetenteText := "Docvalle, Vila Resende"
+	complementoBairroRemetenteText := translator("Docvalle, Vila Resende")
 	pdf.Text(complementoBairroRemetenteX, complementoBairroRemetenteY, complementoBairroRemetenteText)
 
 	cepCidadeUfRemetenteX := x
 	cepCidadeUfRemetenteY := complementoBairroRemetenteY + lineHeight*1.3
-	cepCidadeUfRemetenteText := "12282-220 Caçapava/SP"
+	cepCidadeUfRemetenteText := translator("12282-220 Caçapava/SP")
 	pdf.Text(cepCidadeUfRemetenteX, cepCidadeUfRemetenteY, cepCidadeUfRemetenteText)
 
 	nextY := cepCidadeUfRemetenteY + lineHeight
@@ -295,10 +301,10 @@ func DrawDadosRemetente(pdf *gofpdf.Fpdf, x, y float64, remetente types.Remetent
 	return nextY
 }
 
-// !
+// ! ========== FORMATADOR DO CÓDIGO DE RASTREIO ==========
 func FormatTrackingCode(code string) string {
 	if len(code) != 13 {
-		return code // Or handle the error according to your needs
+		return code
 	}
 
 	return code[:2] + " " + code[2:5] + " " + code[5:8] + " " + code[8:11] + " " + code[11:]

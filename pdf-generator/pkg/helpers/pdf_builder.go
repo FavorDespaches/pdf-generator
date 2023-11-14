@@ -3,6 +3,7 @@ package helpers
 import (
 	"bytes"
 	"encoding/base64"
+	"fmt"
 
 	"github.com/FavorDespaches/pdf-generator/pkg/types"
 	"github.com/jung-kurt/gofpdf"
@@ -22,15 +23,15 @@ func chunkifyObjetosPostais(objetos []types.ObjetoPostal, chunkSize int) [][]typ
 
 func GenerateLabelsPDF(correiosLog types.CorreiosLog) (string, []string, error) {
 	pdf := gofpdf.New("P", "mm", "A4", "")
-	pdf.AddUTF8Font("Arial", "", "ttf/Arial.ttf")
-	pdf.AddUTF8Font("Arial", "B", "ttf/Arial_Bold.ttf")
 
 	idPlp := correiosLog.Plp.IdPlp
 	remetente := correiosLog.Remetente
 	chunkifiedObjetoPostal := chunkifyObjetosPostais(correiosLog.ObjetoPostal, 4)
 
 	var etiquetas []string
-	for _, objetoPostalChunk := range chunkifiedObjetoPostal {
+	fmt.Println(" - Número de Páginas do PDF: ", len(chunkifiedObjetoPostal))
+	for k, objetoPostalChunk := range chunkifiedObjetoPostal {
+		fmt.Println("   - Desenhando a página ", k)
 		pdf.AddPage()
 		DrawDottedLines(pdf)
 
@@ -41,8 +42,9 @@ func GenerateLabelsPDF(correiosLog types.CorreiosLog) (string, []string, error) 
 			{pageWidth / 2, pageHeight / 2},
 		}
 
-		for i, startPoint := range subdivisionStartPoints {
-			objetoPostal := objetoPostalChunk[i]
+		for i, objetoPostal := range objetoPostalChunk {
+			fmt.Println("     - Desenhando a etiqueta ", i)
+			startPoint := subdivisionStartPoints[i]
 			etiquetas = append(etiquetas, objetoPostal.NumeroEtiqueta)
 			DrawLabel(pdf, startPoint.x, startPoint.y, labelWidth, labelHeight, i, idPlp, remetente, objetoPostal)
 		}
@@ -52,7 +54,7 @@ func GenerateLabelsPDF(correiosLog types.CorreiosLog) (string, []string, error) 
 
 	err := pdf.Output(&buffer)
 	if err != nil {
-		return "", []string{""}, err
+		panic(err)
 	}
 
 	base64Str := base64.StdEncoding.EncodeToString(buffer.Bytes())

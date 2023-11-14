@@ -1,1 +1,2 @@
-build
+pdf-generator/build
+.aws-sam
