@@ -8,9 +8,7 @@ import (
 
 // Define the SuccessResponse structure
 type SuccessResponse struct {
-	IdPlp       int      `json:"idPlp"`
-	Etiquetas   []string `json:"etiquetas"`
-	LabelBase64 string   `json:"labelBase64"`
+	StringBase64 string `json:"stringBase64"`
 }
 
 // Define the ErrorResponse structure
@@ -18,7 +16,7 @@ type ErrorResponse struct {
 	Message string `json:"message"`
 }
 
-func apiResponse(status int, body interface{}) (*events.APIGatewayProxyResponse, error) {
+func ApiResponse(status int, body interface{}) (*events.APIGatewayProxyResponse, error) {
 	stringBody, err := json.Marshal(body)
 
 	if err != nil {

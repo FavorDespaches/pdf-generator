@@ -1,7 +1,12 @@
 package helpers
 
 import (
+	"encoding/base64"
 	"fmt"
+	"log"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/FavorDespaches/pdf-generator/pkg/types"
 	"github.com/jung-kurt/gofpdf"
@@ -46,8 +51,21 @@ func DrawDottedLine(pdf *gofpdf.Fpdf, x1, y1, x2, y2 float64) {
 	pdf.DrawPath("D")
 }
 
-/*
 func addImage(pdf *gofpdf.Fpdf, imagePath string, x, y, width, height float64) {
+	// Extract the file extension
+	extWithDot := filepath.Ext(imagePath)
+	if len(extWithDot) <= 1 {
+		// Handle the error: file extension is missing or invalid
+		log.Fatalf("Invalid file extension for image: %s", imagePath)
+		return
+	}
+
+	// Extract the file extension
+	ext := strings.ToUpper(filepath.Ext(imagePath)[1:])
+
+	// Debugging: Print the imagePath and ImageType
+	fmt.Printf("Image path: %s, Image type: %s\n", imagePath, ext)
+
 	options := gofpdf.ImageOptions{
 		ReadDpi:   true,
 		ImageType: "",
@@ -55,10 +73,116 @@ func addImage(pdf *gofpdf.Fpdf, imagePath string, x, y, width, height float64) {
 
 	pdf.ImageOptions(imagePath, x, y, width, height, false, options, 0, "")
 }
+
+func addBase64ImageToPDF(pdf *gofpdf.Fpdf, base64String string, x, y, w, h float64) error {
+	// Decode the base64 string
+	imgData, err := base64.StdEncoding.DecodeString(base64String)
+	if err != nil {
+		return err
+	}
+
+	// Create a temporary file
+	tempFile, err := os.CreateTemp("", "*.png")
+	if err != nil {
+		return err
+	}
+	defer tempFile.Close()
+	defer os.Remove(tempFile.Name()) // Clean up
+
+	// Write the decoded image to the temporary file
+	_, err = tempFile.Write(imgData)
+	if err != nil {
+		return err
+	}
+
+	// Add the image to the PDF
+	pdf.Image(tempFile.Name(), x, y, w, h, false, "", 0, "")
+
+	return nil
+}
+
+/*
+	func generateBarcode128(pdf *gofpdf.Fpdf, code string, posX, posY, width, height float64) error {
+		// Generate barcode
+		bcode, err := code128.Encode(code)
+		if err != nil {
+			return err
+		}
+
+		// Scale barcode to the specified width and height
+		scaledBarcode, err := barcode.Scale(bcode, int(width), int(height))
+		if err != nil {
+			return err
+		}
+
+		// Save the barcode to a temporary file
+		tempFile, err := os.CreateTemp("", "barcode_*.png")
+		if err != nil {
+			return err
+		}
+		defer tempFile.Close()
+		defer os.Remove(tempFile.Name()) // Clean up
+
+		if err := png.Encode(tempFile, scaledBarcode); err != nil {
+			return err
+		}
+
+		// Add barcode image to PDF
+		pdf.Image(tempFile.Name(), posX, posY, width, height, false, "", 0, "")
+
+		return nil
+	}
+
+	func generateDataMatrix(pdf *gofpdf.Fpdf, data string, posX, posY, width, height float64) error {
+		// Generate DataMatrix barcode
+		bcode, err := datamatrix.Encode(data)
+		if err != nil {
+			return err
+		}
+
+		// Scale barcode to desired width and height
+		scaledBarcode, err := barcode.Scale(bcode, int(width), int(height))
+		if err != nil {
+			return err
+		}
+
+		// Save the barcode to a temporary file
+		tempFile, err := os.CreateTemp("", "datamatrix_*.png")
+		if err != nil {
+			return err
+		}
+
+		defer tempFile.Close()
+		defer os.Remove(tempFile.Name()) // Clean up
+
+		if err := png.Encode(tempFile, scaledBarcode); err != nil {
+			return err
+		}
+
+		pdf.Image(tempFile.Name(), posX, posY, width, height, false, "", 0, "")
+
+		return nil
+	}
 */
+func findTipoServicoImagemByCodServicoPostagem(codServicoPostagem string) string {
+	fmt.Println("codServicoPostagem:", codServicoPostagem)
+	var tipoServicoImagem string
+	switch codServicoPostagem {
+	case "03298", "3298":
+		tipoServicoImagem = "pac.png"
+	case "03220", "3220":
+		fmt.Println("entrou")
+		tipoServicoImagem = "sedex-standard.png"
+	case "04227", "4227":
+		tipoServicoImagem = "mini-envios.png"
+	default:
+		panic("Código não implementado!")
+	}
+	return tipoServicoImagem
+}
 
 // ! ===== PRIMEIRA LINHA DA ETIQUETA =====
-func DrawFirstRow(pdf *gofpdf.Fpdf, x, y float64, idPlp int) float64 {
+func DrawFirstRow(pdf *gofpdf.Fpdf, x, y float64, idPlp int, tipoServicoImagem string, dataMatrixBase64String string, local bool) float64 {
 	spaceBetween := 12.0 // Space between elements
 
 	// Calculate positions based on the dimensions and space between elements
@@ -67,9 +191,13 @@ func DrawFirstRow(pdf *gofpdf.Fpdf, x, y float64, idPlp int) float64 {
 	brandingX := dataMatrixX + dataMatrixSize + spaceBetween
 
 	//! TIPO SERVIÇO LOGO
-	pdf.SetFillColor(255, 0, 0)
-	pdf.Rect(tipoServicoX, y, tipoServicoSize, tipoServicoSize, "F")
-	//addImage(pdf, "pdf-generator/images/sedex-expresso.png", tipoServicoX, y, tipoServicoSize, tipoServicoSize)
+	var tipoServicoImagemPath string
+	if local {
+		tipoServicoImagemPath = filepath.Join("../../layers/images", tipoServicoImagem)
+	} else {
+		tipoServicoImagemPath = filepath.Join("/opt", "bin", "images", tipoServicoImagem)
+	}
+	addImage(pdf, tipoServicoImagemPath, tipoServicoX, y, tipoServicoSize, tipoServicoSize)
 
 	idPlpX := tipoServicoX - 0.7
 	idPLpY := y + tipoServicoSize + 0.25
@@ -79,14 +207,21 @@ func DrawFirstRow(pdf *gofpdf.Fpdf, x, y float64, idPlp int) float64 {
 	pdf.CellFormat(tipoServicoSize, 8, idPlpText, "", 0, "LM", false, 0, "")
 
 	//! DATA MATRIX
-	pdf.SetFillColor(0, 0, 0) // Black
-	pdf.Rect(dataMatrixX, y, dataMatrixSize, dataMatrixSize, "F")
+	// errDataMatrix := generateDataMatrix(pdf, dataMatrixBase64String, dataMatrixX, y, dataMatrixSize, dataMatrixSize)
+	errDataMatrix := addBase64ImageToPDF(pdf, dataMatrixBase64String, dataMatrixX, y, dataMatrixSize, dataMatrixSize)
+	if errDataMatrix != nil {
+		errDataMatrixString := fmt.Sprintf("Erro generateDataMatrix %s", errDataMatrix.Error())
+		panic(errDataMatrixString)
+	}
 
 	//! LOGO FAVOR
-	pdf.SetFillColor(200, 200, 200) // Light gray
-	pdf.Rect(brandingX, y, logoWidth, logoHeight, "F")
-	pdf.SetFillColor(0, 0, 0)
-	//addImage(pdf, "pdf-generator/images/favor-logo.png", brandingX, y, logoWidth, logoHeight)
+	var favorLogoImagePath string
+	if local {
+		favorLogoImagePath = filepath.Join("../../layers/images", "favor-logo.png")
+	} else {
+		favorLogoImagePath = filepath.Join("/opt", "bin", "images", "favor-logo.png")
+	}
+	addImage(pdf, favorLogoImagePath, brandingX, y, logoWidth, logoHeight)
 
 	nextY := y + dataMatrixSize
 
@@ -135,9 +270,16 @@ func DrawTrackingCode(pdf *gofpdf.Fpdf, x, y float64, trackingCode string) float
 }
 
 // ! ========== BARRA DE CÓDIGO MAIOR ==========
-func DrawBarcodePlaceholder(pdf *gofpdf.Fpdf, x, y float64) float64 {
+func DrawBarcode(pdf *gofpdf.Fpdf, x, y float64, barcodeBase64String string) float64 {
 	centerX := x + (labelWidth / 2) - (barcodeWidth / 2)
-	pdf.Rect(centerX, y, barcodeWidth, barcodeHeight, "D")
+	// generateBarcode128(pdf, barcodeBase64String, centerX, y, barcodeWidth, barcodeHeight)
+	errBarcode := addBase64ImageToPDF(pdf, barcodeBase64String, centerX, y, barcodeWidth, barcodeHeight)
+
+	if errBarcode != nil {
+		errBarcodeString := fmt.Sprintf("Erro DrawBarcode addBase64ImageToPDF %s", errBarcode.Error())
+		panic(errBarcodeString)
+	}
+
 	return y + barcodeHeight
 }
 
@@ -186,7 +328,7 @@ func DrawRecebedorAssinaturaDocumentoLines(pdf *gofpdf.Fpdf, x, y float64) float
 }
 
 // ! ========== DIVISOR DESTINATÁRIO ==========
-func DrawDestinatarioCorreiosLogoDivisor(pdf *gofpdf.Fpdf, x, y float64) float64 {
+func DrawDestinatarioCorreiosLogoDivisor(pdf *gofpdf.Fpdf, x, y float64, local bool) float64 {
 	translator := pdf.UnicodeTranslatorFromDescriptor("")
 	const DESTINATARIO = "DESTINATÁRIO   "
 	destinatarioTextWidth := pdf.GetStringWidth(DESTINATARIO) + 10
@@ -210,12 +352,77 @@ func DrawDestinatarioCorreiosLogoDivisor(pdf *gofpdf.Fpdf, x, y float64) float64
 	pdf.SetTextColor(0, 0, 0)
 
 	//!TODO: Adicionar o logo dos correios
-	//widthHeightRatio := 4781.0 / 958.0
-	//imageWidth := 20.0
-	//imageHeight := imageWidth / widthHeightRatio
-	//addImage(pdf, "pdf-generator/images/correios-logo.png", x+labelWidth-22, y+1, imageWidth, imageHeight)
+	widthHeightRatio := 4781.0 / 958.0
+	imageWidth := 20.0
+	imageHeight := imageWidth / widthHeightRatio
+
+	var correiosLogoImagePath string
+	if local {
+		correiosLogoImagePath = filepath.Join("../../layers/images", "correios-logo.png")
+	} else {
+		correiosLogoImagePath = filepath.Join("/opt", "bin", "images", "correios-logo.png")
+	}
+	addImage(pdf, correiosLogoImagePath, x+labelWidth-22, y+1, imageWidth, imageHeight)
 
 	return y + 8.0
+}
+
+func buildLogradouroDestinatarioString(destinatario types.Destinatario) string {
+	var hasNumerodestinatario = destinatario.NumeroEndDestinatario != ""
+
+	var logradouroDestinatarioString string
+
+	logradouroDestinatarioString += destinatario.LogradouroDestinatario
+
+	if hasNumerodestinatario {
+		logradouroDestinatarioString += ", "
+		logradouroDestinatarioString += destinatario.NumeroEndDestinatario
+	}
+
+	return logradouroDestinatarioString
+}
+
+func buildComplementoBairroDestinatarioString(destinatario types.Destinatario, nacional types.Nacional) string {
+	var hasComplemento = destinatario.ComplementoDestinatario != ""
+	var hasBairro = nacional.BairroDestinatario != ""
+
+	var complementoBairroDestinatarioString string
+
+	if hasComplemento {
+		complementoBairroDestinatarioString += destinatario.ComplementoDestinatario
+	}
+	if hasComplemento && hasBairro {
+		complementoBairroDestinatarioString += ", "
+	}
+	if hasBairro {
+		complementoBairroDestinatarioString += nacional.BairroDestinatario
+	}
+
+	return complementoBairroDestinatarioString
+}
+
+func buildCepDestinatarioString(nacional types.Nacional) string {
+	var formattedCEP string
+	cep := nacional.CepDestinatario
+	lenCEP := len(nacional.CepDestinatario)
+
+	if lenCEP != 8 {
+		if lenCEP == 7 {
+			formattedCEP += "0"
+			formattedCEP += nacional.CepDestinatario
+		} else {
+			panic("CEP INVÁLIDO")
+		}
+	} else {
+		formattedCEP = cep[:5] + "-" + cep[5:]
+	}
+
+	return formattedCEP
+}
+
+func buildCidadeUfDestinatarioString(nacional types.Nacional) string {
+	cidadeUfDestinatarioString := fmt.Sprintf("%s / %s", nacional.CidadeDestinatario, nacional.UfDestinatario)
+	return cidadeUfDestinatarioString
 }
 
 // ! ========== DADOS DO DESTINATÁRIO ==========
@@ -227,23 +434,35 @@ func DrawDadosDestinatario(pdf *gofpdf.Fpdf, x, y float64, destinatario types.De
 
 	nomeDestinatarioX := x
 	nomeDestinatarioY := y + lineHeight
-	nomeDestinatarioText := translator("Nelson Mendes Jr.")
+	nomeDestinatarioText := translator(destinatario.NomeDestinatario)
 	pdf.Text(nomeDestinatarioX, nomeDestinatarioY, nomeDestinatarioText)
 
 	logradouroDestinatarioX := x
 	logradouroDestinatarioY := nomeDestinatarioY + lineHeight
-	logradouroDestinatarioText := translator("Rua João Moreira da Costa, 12")
+	logradouroDestinatarioString := buildLogradouroDestinatarioString(destinatario)
+	logradouroDestinatarioText := translator(logradouroDestinatarioString)
 	pdf.Text(logradouroDestinatarioX, logradouroDestinatarioY, logradouroDestinatarioText)
 
 	complementoBairroDestinatarioX := x
 	complementoBairroDestinatarioY := logradouroDestinatarioY + lineHeight
-	complementoBairroDestinatarioText := translator("Docvalle, Vila Resende")
+	complementoBairroDestinatarioString := buildComplementoBairroDestinatarioString(destinatario, nacional)
+	complementoBairroDestinatarioText := translator(complementoBairroDestinatarioString)
 	pdf.Text(complementoBairroDestinatarioX, complementoBairroDestinatarioY, complementoBairroDestinatarioText)
 
-	cepCidadeUfDestinatarioX := x
 	cepCidadeUfDestinatarioY := complementoBairroDestinatarioY + lineHeight*1.3
-	cepCidadeUfDestinatarioText := translator("12282-220 Caçapava/SP")
-	pdf.Text(cepCidadeUfDestinatarioX, cepCidadeUfDestinatarioY, cepCidadeUfDestinatarioText)
+
+	pdf.SetFont("Arial", "B", fontSize)
+	cepDestinatarioX := x
+	cepDestinatarioString := buildCepDestinatarioString(nacional)
+	cepDestinatarioText := translator(cepDestinatarioString)
+	pdf.Text(cepDestinatarioX, cepCidadeUfDestinatarioY, cepDestinatarioText)
+
+	pdf.SetFont("Arial", "", fontSize)
+	cidadeUfDestinatarioPaddingLeft := 1.5
+	cidadeUfDestinatarioX := x + pdf.GetStringWidth(cepDestinatarioString) + cidadeUfDestinatarioPaddingLeft
+	cidadeUfDestinatarioString := buildCidadeUfDestinatarioString(nacional)
+	cidadeUfDestinatarioText := translator(cidadeUfDestinatarioString)
+	pdf.Text(cidadeUfDestinatarioX, cepCidadeUfDestinatarioY, cidadeUfDestinatarioText)
 
 	nextY := cepCidadeUfDestinatarioY + lineHeight
 
@@ -251,8 +470,15 @@ func DrawDadosDestinatario(pdf *gofpdf.Fpdf, x, y float64, destinatario types.De
 }
 
 // ! ========== BARRA DE CÓDIGO DESTINATÁRIO ==========
-func DrawDestinatarioBarCodePlaceholder(pdf *gofpdf.Fpdf, x, y float64) float64 {
-	pdf.Rect(x, y, destinatarioBarCodeWidth, destinatarioBarCodeHeight, "D")
+func DrawDestinatarioBarCode(pdf *gofpdf.Fpdf, x, y float64, destinatarioBarcodeBase64String string) float64 {
+	// generateBarcode128(pdf, destinatarioBarcodeBase64String, x, y, destinatarioBarCodeWidth, destinatarioBarCodeHeight)
+	errDestinatarioBarCode := addBase64ImageToPDF(pdf, destinatarioBarcodeBase64String, x, y, destinatarioBarCodeWidth, destinatarioBarCodeHeight)
+
+	if errDestinatarioBarCode != nil {
+		errDestinatarioBarCodeString := fmt.Sprintf("Erro DrawDestinatarioBarCode generateBarcode128 %s", errDestinatarioBarCode.Error())
+		panic(errDestinatarioBarCodeString)
+	}
+
 	return y + destinatarioBarCodeHeight
 }
 
@@ -269,6 +495,63 @@ func DrawSeparadorRemetente(pdf *gofpdf.Fpdf, x, y float64) float64 {
 	return nextY
 }
 
+func buildLogradouroRemetenteString(remetente types.Remetente) string {
+	var hasNumeroRemetente = remetente.NumeroRemetente != ""
+
+	var logradouroRemetenteString string
+
+	logradouroRemetenteString += remetente.LogradouroRemetente
+
+	if hasNumeroRemetente {
+		logradouroRemetenteString += ", "
+		logradouroRemetenteString += remetente.NumeroRemetente
+	}
+
+	return logradouroRemetenteString
+}
+
+func buildComplementoBairroRemetenteString(remetente types.Remetente) string {
+	var hasComplemento = remetente.ComplementoRemetente != ""
+	var hasBairro = remetente.BairroRemetente != ""
+
+	var complementoBairroRemetenteString string
+
+	if hasComplemento {
+		complementoBairroRemetenteString += remetente.ComplementoRemetente
+	}
+	if hasComplemento && hasBairro {
+		complementoBairroRemetenteString += ", "
+	}
+	if hasBairro {
+		complementoBairroRemetenteString += remetente.BairroRemetente
+	}
+
+	return complementoBairroRemetenteString
+}
+
+func buildCepRemetenteString(remetente types.Remetente) string {
+	var formattedCEP string
+	cep := remetente.CepRemetente
+	lenCEP := len(remetente.CepRemetente)
+
+	if lenCEP != 8 {
+		if lenCEP == 7 {
+			formattedCEP += "0"
+			formattedCEP += remetente.CepRemetente
+		} else {
+			panic("CEP INVÁLIDO")
+		}
+	} else {
+		formattedCEP = cep[:5] + "-" + cep[5:]
+	}
+	return formattedCEP
+}
+
+func buildCidadeUfRemetenteString(remetente types.Remetente) string {
+	cidadeUfRemetenteString := fmt.Sprintf("%s / %s", remetente.CidadeRemetente, remetente.UfRemetente)
+	return cidadeUfRemetenteString
+}
+
 // ! ========== DADOS DO REMETENTE ==========
 func DrawDadosRemetente(pdf *gofpdf.Fpdf, x, y float64, remetente types.Remetente) float64 {
 	translator := pdf.UnicodeTranslatorFromDescriptor("")
@@ -276,25 +559,45 @@ func DrawDadosRemetente(pdf *gofpdf.Fpdf, x, y float64, remetente types.Remetent
 	lineHeight := 3.5
 	pdf.SetFont("Arial", "", fontSize)
 
-	nomeRemetenteX := x
 	nomeRemetenteY := y
-	nomeRemetenteText := translator("Nelson Mendes Jr.")
+
+	pdf.SetFont("Arial", "B", fontSize)
+	remetenteX := x
+	remetenteText := translator("Remetente: ")
+	pdf.Text(remetenteX, nomeRemetenteY, remetenteText)
+
+	pdf.SetFont("Arial", "", fontSize)
+	nomeRemetentePaddingLeft := 1.0
+	nomeRemetenteX := x + pdf.GetStringWidth("Remetente: ") + nomeRemetentePaddingLeft
+	nomeRemetenteText := translator(remetente.NomeRemetente)
 	pdf.Text(nomeRemetenteX, nomeRemetenteY, nomeRemetenteText)
 
 	logradouroRemetenteX := x
 	logradouroRemetenteY := nomeRemetenteY + lineHeight
-	logradouroRemetenteText := translator("Rua João Moreira da Costa, 12")
+	logradouroRemetenteString := buildLogradouroRemetenteString(remetente)
+	logradouroRemetenteText := translator(logradouroRemetenteString)
 	pdf.Text(logradouroRemetenteX, logradouroRemetenteY, logradouroRemetenteText)
 
 	complementoBairroRemetenteX := x
 	complementoBairroRemetenteY := logradouroRemetenteY + lineHeight
-	complementoBairroRemetenteText := translator("Docvalle, Vila Resende")
+	complementoBairroRemetenteString := buildComplementoBairroRemetenteString(remetente)
+	complementoBairroRemetenteText := translator(complementoBairroRemetenteString)
 	pdf.Text(complementoBairroRemetenteX, complementoBairroRemetenteY, complementoBairroRemetenteText)
 
-	cepCidadeUfRemetenteX := x
 	cepCidadeUfRemetenteY := complementoBairroRemetenteY + lineHeight*1.3
-	cepCidadeUfRemetenteText := translator("12282-220 Caçapava/SP")
-	pdf.Text(cepCidadeUfRemetenteX, cepCidadeUfRemetenteY, cepCidadeUfRemetenteText)
+
+	pdf.SetFont("Arial", "B", fontSize)
+	cepRemetenteX := x
+	cepRemetenteString := buildCepRemetenteString(remetente)
+	cepRemetenteText := translator(cepRemetenteString)
+	pdf.Text(cepRemetenteX, cepCidadeUfRemetenteY, cepRemetenteText)
+
+	pdf.SetFont("Arial", "", fontSize)
+	cidadeUfRemetentePaddingLeft := 1.5
+	cidadeUfRemetenteX := x + pdf.GetStringWidth(cepRemetenteString) + cidadeUfRemetentePaddingLeft
+	cidadeUfRemetenteString := buildCidadeUfRemetenteString(remetente)
+	cidadeUfRemetenteText := translator(cidadeUfRemetenteString)
+	pdf.Text(cidadeUfRemetenteX, cepCidadeUfRemetenteY, cidadeUfRemetenteText)
 
 	nextY := cepCidadeUfRemetenteY + lineHeight
 

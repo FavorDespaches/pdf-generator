@@ -10,6 +10,10 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 )
 
+func SolicitarEtiquetaLocal(correiosLog types.CorreiosLog) {
+	fmt.Println("\n\n========== INICIANDO LAMBDA ==========")
+}
+
 func SolicitarEtiqueta(req events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	fmt.Println("\n\n========== INICIANDO LAMBDA ==========")
 	var correiosLog types.CorreiosLog
@@ -21,10 +25,10 @@ func SolicitarEtiqueta(req events.APIGatewayProxyRequest) (*events.APIGatewayPro
 		errorBody := ErrorResponse{
 			Message: errText,
 		}
-		return apiResponse(http.StatusBadRequest, errorBody)
+		return ApiResponse(http.StatusBadRequest, errorBody)
 	}
 
-	base64String, etiquetas, err := helpers.GenerateLabelsPDF(correiosLog)
+	base64String, err := helpers.GenerateLabelsPDF(correiosLog)
 
 	if err != nil {
 		errText := fmt.Sprintf("Erro GenerateLabelsPDF: %s", err.Error())
@@ -32,16 +36,14 @@ func SolicitarEtiqueta(req events.APIGatewayProxyRequest) (*events.APIGatewayPro
 		errorBody := ErrorResponse{
 			Message: errText,
 		}
-		apiResponse(http.StatusBadRequest, errorBody)
+		ApiResponse(http.StatusBadRequest, errorBody)
 	}
 
 	successBody := SuccessResponse{
-		IdPlp:       correiosLog.Plp.IdPlp,
-		Etiquetas:   etiquetas,
-		LabelBase64: base64String,
+		StringBase64: base64String,
 	}
 
-	return apiResponse(http.StatusOK, successBody)
+	return ApiResponse(http.StatusOK, successBody)
 }
 
 func HandleUnsupportedMethod() (*events.APIGatewayProxyResponse, error) {
@@ -49,5 +51,5 @@ func HandleUnsupportedMethod() (*events.APIGatewayProxyResponse, error) {
 		Message: "Método inválido, utilize somente POST",
 	}
 
-	return apiResponse(http.StatusBadRequest, errorBody)
+	return ApiResponse(http.StatusBadRequest, errorBody)
 }

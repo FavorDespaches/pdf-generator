@@ -19,3 +19,15 @@ Resources:
             Runtime: go1.x
             Architectures:
                 - x86_64
+            Layers:
+                - !Ref FilesLayer
+
+    FilesLayer:
+        Type: AWS::Serverless::LayerVersion
+        Properties:
+            LayerName: files-layer
+            Description: "Custom Layer for PDF Generator Function"
+            ContentUri: layers/
+            CompatibleRuntimes:
+                - go1.x
+            RetentionPolicy: Retain
