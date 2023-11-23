@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"github.com/FavorDespaches/pdf-generator/pkg/codes"
 	"github.com/FavorDespaches/pdf-generator/pkg/types"
 	"github.com/jung-kurt/gofpdf"
 )
@@ -98,9 +97,9 @@ func DrawLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, index int, idPlp i
 	tipoServicoImagem := findTipoServicoImagemByCodServicoPostagem(codServicoPostagem)
 	fmt.Println("     - Tipo serviço postagem etiqueta", tipoServicoImagem)
 
-	dataMatrixBase64String := codes.GetDatamatrix()          //objetoPostal.Base64.Datamatrix
-	barcodeBase64String := codes.GetCode()                   //objetoPostal.Base64.Code
-	destinatarioBarcodeBase64String := codes.GetCepBarcode() //objetoPostal.Base64.CepBarcode
+	dataMatrixBase64String := objetoPostal.Base64.Datamatrix
+	barcodeBase64String := objetoPostal.Base64.Code
+	destinatarioBarcodeBase64String := objetoPostal.Base64.CepBarcode
 
 	paddingTop := 2.0
 	paddingLeft := 5.0
