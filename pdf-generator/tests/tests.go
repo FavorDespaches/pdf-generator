@@ -31,7 +31,7 @@ func main() {
 		FormaPagamento: "5",
 		ObjetoPostal: []types.ObjetoPostal{
 			{
-				CodigoServicoPostagem: "03220",
+				CodigoServicoPostagem: "03158",
 				Peso:                  20,
 				Destinatario: types.Destinatario{
 					NomeDestinatario:        "Reda Ali Gharib",

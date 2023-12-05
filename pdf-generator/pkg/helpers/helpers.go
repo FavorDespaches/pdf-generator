@@ -171,10 +171,15 @@ func findTipoServicoImagemByCodServicoPostagem(codServicoPostagem string) string
 	case "03298", "3298":
 		tipoServicoImagem = "pac.png"
 	case "03220", "3220":
-		fmt.Println("entrou")
 		tipoServicoImagem = "sedex-standard.png"
 	case "04227", "4227":
 		tipoServicoImagem = "mini-envios.png"
+	case "03158", "3158":
+		tipoServicoImagem = "sedex-10.png"
+	case "03140", "3140":
+		tipoServicoImagem = "sedex-12.png"
+	case "03204", "3204":
+		tipoServicoImagem = "sedex-hoje.png"
 	default:
 		panic("Código não implementado!")
 	}
