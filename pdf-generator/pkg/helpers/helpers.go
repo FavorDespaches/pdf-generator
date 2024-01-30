@@ -26,6 +26,9 @@ const (
 	destinatarioBarCodeWidth  = 40.0
 	destinatarioBarCodeHeight = 18.0
 	defaultLineWidth          = 0.3
+	SEDEX_10_FILEPATH         = "sedex-10.png"
+	SEDEX_12_FILEPATH         = "sedex-12.png"
+	SEDEX_HOJE_FILEPATH       = "sedex-hoje.png"
 )
 
 // ! ===== DIVISOR DO PAPEL A4 EM 4 PARTES IDÊNTICAS =====
@@ -51,7 +54,7 @@ func DrawDottedLine(pdf *gofpdf.Fpdf, x1, y1, x2, y2 float64) {
 	pdf.DrawPath("D")
 }
 
-func addImage(pdf *gofpdf.Fpdf, imagePath string, x, y, width, height float64) {
+func addImage(pdf *gofpdf.Fpdf, imagePath string, x, y, width, height float64, keepAspectRatio bool) {
 	// Extract the file extension
 	extWithDot := filepath.Ext(imagePath)
 	if len(extWithDot) <= 1 {
@@ -68,7 +71,11 @@ func addImage(pdf *gofpdf.Fpdf, imagePath string, x, y, width, height float64) {
 
 	options := gofpdf.ImageOptions{
 		ReadDpi:   true,
-		ImageType: "",
+		ImageType: ext,
+	}
+
+	if !keepAspectRatio {
+		height = 0
 	}
 
 	pdf.ImageOptions(imagePath, x, y, width, height, false, options, 0, "")
@@ -101,69 +108,6 @@ func addBase64ImageToPDF(pdf *gofpdf.Fpdf, base64String string, x, y, w, h float
 	return nil
 }
 
-/*
-	func generateBarcode128(pdf *gofpdf.Fpdf, code string, posX, posY, width, height float64) error {
-		// Generate barcode
-		bcode, err := code128.Encode(code)
-		if err != nil {
-			return err
-		}
-
-		// Scale barcode to the specified width and height
-		scaledBarcode, err := barcode.Scale(bcode, int(width), int(height))
-		if err != nil {
-			return err
-		}
-
-		// Save the barcode to a temporary file
-		tempFile, err := os.CreateTemp("", "barcode_*.png")
-		if err != nil {
-			return err
-		}
-		defer tempFile.Close()
-		defer os.Remove(tempFile.Name()) // Clean up
-
-		if err := png.Encode(tempFile, scaledBarcode); err != nil {
-			return err
-		}
-
-		// Add barcode image to PDF
-		pdf.Image(tempFile.Name(), posX, posY, width, height, false, "", 0, "")
-
-		return nil
-	}
-
-	func generateDataMatrix(pdf *gofpdf.Fpdf, data string, posX, posY, width, height float64) error {
-		// Generate DataMatrix barcode
-		bcode, err := datamatrix.Encode(data)
-		if err != nil {
-			return err
-		}
-
-		// Scale barcode to desired width and height
-		scaledBarcode, err := barcode.Scale(bcode, int(width), int(height))
-		if err != nil {
-			return err
-		}
-
-		// Save the barcode to a temporary file
-		tempFile, err := os.CreateTemp("", "datamatrix_*.png")
-		if err != nil {
-			return err
-		}
-
-		defer tempFile.Close()
-		defer os.Remove(tempFile.Name()) // Clean up
-
-		if err := png.Encode(tempFile, scaledBarcode); err != nil {
-			return err
-		}
-
-		pdf.Image(tempFile.Name(), posX, posY, width, height, false, "", 0, "")
-
-		return nil
-	}
-*/
 func findTipoServicoImagemByCodServicoPostagem(codServicoPostagem string) string {
 	fmt.Println("codServicoPostagem:", codServicoPostagem)
 	var tipoServicoImagem string
@@ -175,11 +119,11 @@ func findTipoServicoImagemByCodServicoPostagem(codServicoPostagem string) string
 	case "04227", "4227":
 		tipoServicoImagem = "mini-envios.png"
 	case "03158", "3158":
-		tipoServicoImagem = "sedex-10.png"
+		tipoServicoImagem = SEDEX_10_FILEPATH
 	case "03140", "3140":
-		tipoServicoImagem = "sedex-12.png"
+		tipoServicoImagem = SEDEX_12_FILEPATH
 	case "03204", "3204":
-		tipoServicoImagem = "sedex-hoje.png"
+		tipoServicoImagem = SEDEX_HOJE_FILEPATH
 	default:
 		panic("Código não implementado!")
 	}
@@ -202,7 +146,15 @@ func DrawFirstRow(pdf *gofpdf.Fpdf, x, y float64, idPlp int, tipoServicoImagem s
 	} else {
 		tipoServicoImagemPath = filepath.Join("/opt", "bin", "images", tipoServicoImagem)
 	}
-	addImage(pdf, tipoServicoImagemPath, tipoServicoX, y, tipoServicoSize, tipoServicoSize)
+
+	keepAspectRatio := false
+	ratio := 1.0
+	if tipoServicoImagem == SEDEX_10_FILEPATH || tipoServicoImagem == SEDEX_12_FILEPATH || tipoServicoImagem == SEDEX_HOJE_FILEPATH {
+		keepAspectRatio = true
+		ratio = 1.4
+	}
+
+	addImage(pdf, tipoServicoImagemPath, tipoServicoX, y, ratio*tipoServicoSize, tipoServicoSize, keepAspectRatio)
 
 	idPlpX := tipoServicoX - 0.7
 	idPLpY := y + tipoServicoSize + 0.25
@@ -226,12 +178,78 @@ func DrawFirstRow(pdf *gofpdf.Fpdf, x, y float64, idPlp int, tipoServicoImagem s
 	} else {
 		favorLogoImagePath = filepath.Join("/opt", "bin", "images", "favor-logo.png")
 	}
-	addImage(pdf, favorLogoImagePath, brandingX, y, logoWidth, logoHeight)
+	addImage(pdf, favorLogoImagePath, brandingX, y, logoWidth, logoHeight, false)
 
 	nextY := y + dataMatrixSize
 
 	return nextY
 }
+
+// ! ===== PRIMEIRA LINHA DA ETIQUETA =====
+func DrawSmallFirstRow(pdf *gofpdf.Fpdf, x, y float64, idPlp int, tipoServicoImagem string, dataMatrixBase64String string, local bool) float64 {
+	spaceBetween := 12.0 // Space between elements
+
+	// Calculate positions based on the dimensions and space between elements
+	tipoServicoX := x
+
+	//! TIPO SERVIÇO LOGO
+	var tipoServicoImagemPath string
+	if local {
+		tipoServicoImagemPath = filepath.Join("../../layers/images", tipoServicoImagem)
+	} else {
+		tipoServicoImagemPath = filepath.Join("/opt", "bin", "images", tipoServicoImagem)
+	}
+
+	keepAspectRatio := false
+	ratio := 1.0
+	if tipoServicoImagem == SEDEX_10_FILEPATH || tipoServicoImagem == SEDEX_12_FILEPATH || tipoServicoImagem == SEDEX_HOJE_FILEPATH {
+		keepAspectRatio = true
+		ratio = 1.4
+	}
+
+	addImage(pdf, tipoServicoImagemPath, tipoServicoX, y, ratio*tipoServicoSize, tipoServicoSize, keepAspectRatio)
+
+	idPlpX := tipoServicoX - 0.7
+	idPLpY := y + tipoServicoSize + 0.25
+	idPlpText := fmt.Sprintf("PLP: %v", idPlp)
+	pdf.SetXY(idPlpX, idPLpY)
+	pdf.SetFont("Arial", "", 8)
+	pdf.CellFormat(tipoServicoSize, 8, idPlpText, "", 0, "LM", false, 0, "")
+
+	//! DATA MATRIX
+	// errDataMatrix := generateDataMatrix(pdf, dataMatrixBase64String, dataMatrixX, y, dataMatrixSize, dataMatrixSize)
+	dataMatrixX := tipoServicoX + tipoServicoSize + 1.3*spaceBetween
+	errDataMatrix := addBase64ImageToPDF(pdf, dataMatrixBase64String, dataMatrixX, y, dataMatrixSize, dataMatrixSize)
+	if errDataMatrix != nil {
+		errDataMatrixString := fmt.Sprintf("Erro generateDataMatrix %s", errDataMatrix.Error())
+		panic(errDataMatrixString)
+	}
+
+	//! LOGO FAVOR
+	var favorLogoImagePath string
+	brandingX := dataMatrixX + dataMatrixSize + 0.7*spaceBetween
+	if local {
+		favorLogoImagePath = filepath.Join("../../layers/images", "favor-logo.png")
+	} else {
+		favorLogoImagePath = filepath.Join("/opt", "bin", "images", "favor-logo.png")
+	}
+	addImage(pdf, favorLogoImagePath, brandingX, y, logoWidth, logoHeight, false)
+
+	nextY := y + dataMatrixSize
+
+	return nextY
+}
+
+func DrawSmallDelimiter(pdf *gofpdf.Fpdf, x, y float64) {
+	pdf.SetDrawColor(0, 0, 0)
+	//! LINHA HORIZONTAL
+	DrawDottedLine(pdf, x+3.5, y+4.75, x+3.5+98, y+4.75)
+	DrawDottedLine(pdf, x+3.5+98, y+4.75, x+3.5+98, y+4.75+139)
+	DrawDottedLine(pdf, x+3.5+98, y+4.75+139, x+3.5, y+4.75+139)
+	DrawDottedLine(pdf, x+3.5, y+4.75+139, x+3.5, y+4.75)
+}
+
+//-----------------------------------------------------------------
 
 func DrawSecondRow(pdf *gofpdf.Fpdf, x, y float64, peso float64) float64 {
 	spaceBetween := 12.0
@@ -256,6 +274,32 @@ func DrawSecondRow(pdf *gofpdf.Fpdf, x, y float64, peso float64) float64 {
 	nextY := y + 4
 	return nextY
 }
+
+func DrawSmallSecondRow(pdf *gofpdf.Fpdf, x, y float64, peso float64) float64 {
+	spaceBetween := 12.0
+	lineHeight := 6.0
+
+	pedidoTextX := x - 0.7
+	pdf.SetXY(pedidoTextX, y)
+	pdf.SetFont("Arial", "", 8)
+	pdf.CellFormat(tipoServicoSize, lineHeight, "Pedido: 0", "", 0, "L", false, 0, "")
+
+	nfTextX := x + tipoServicoSize + 1.3*spaceBetween - 0.7
+	pdf.SetXY(nfTextX, y)
+	pdf.SetFont("Arial", "", 8)
+	pdf.CellFormat(tipoServicoSize, lineHeight, "NF: 0", "", 0, "L", false, 0, "")
+
+	pesoTextX := nfTextX + dataMatrixSize + 0.7*spaceBetween - 0.7
+	pesoText := fmt.Sprintf("Peso (g): %v", peso)
+	pdf.SetXY(pesoTextX, y)
+	pdf.SetFont("Arial", "", 8)
+	pdf.CellFormat(tipoServicoSize, lineHeight, pesoText, "", 0, "L", false, 0, "")
+
+	nextY := y + 4
+	return nextY
+}
+
+//-----------------------------------------------------------------
 
 // ! ===== CÓDIGO DE RASTREIO =====
 func DrawTrackingCode(pdf *gofpdf.Fpdf, x, y float64, trackingCode string) float64 {
@@ -332,6 +376,51 @@ func DrawRecebedorAssinaturaDocumentoLines(pdf *gofpdf.Fpdf, x, y float64) float
 	return nextY
 }
 
+func DrawSmallRecebedorAssinaturaDocumentoLines(pdf *gofpdf.Fpdf, x, y float64) float64 {
+	const RECEBEDOR = "Recebedor: "
+	const ASSINATURA = "Assinatura: "
+	const DOCUMENTO = "Documento: "
+
+	pdf.SetFont("Arial", "", 8)
+
+	lineHeight := 5.0
+
+	//! RECEBEDOR
+	recebedorX := x
+	recebedorY := y + lineHeight
+
+	recebedorLineXStart := recebedorX + pdf.GetStringWidth(RECEBEDOR)
+	recebedorLineXEnd := x + labelWidth - 10 - 4
+
+	pdf.Text(recebedorX, recebedorY, RECEBEDOR)
+	pdf.Line(recebedorLineXStart, recebedorY, recebedorLineXEnd, recebedorY)
+
+	//! ASSINATURA
+	assinaturaX := x
+	assinaturaY := recebedorY + lineHeight
+
+	assinaturaLineXStart := assinaturaX + pdf.GetStringWidth(ASSINATURA)
+	assinaturaLineXEnd := x + labelWidth/2 - 6
+
+	pdf.Text(assinaturaX, assinaturaY, ASSINATURA)
+	pdf.Line(assinaturaLineXStart, assinaturaY, assinaturaLineXEnd, assinaturaY)
+
+	//! DOCUMENTO
+	documentoX := assinaturaLineXEnd + 1
+	documentoY := assinaturaY
+
+	documentoLineXStart := documentoX + pdf.GetStringWidth(DOCUMENTO)
+	documentoLineXEnd := x + labelWidth - 14
+	pdf.Text(documentoX, documentoY, DOCUMENTO)
+	pdf.Line(documentoLineXStart, documentoY, documentoLineXEnd, documentoY)
+
+	nextY := documentoY + 4
+
+	return nextY
+}
+
+//-----------------------------------------------------------------
+
 // ! ========== DIVISOR DESTINATÁRIO ==========
 func DrawDestinatarioCorreiosLogoDivisor(pdf *gofpdf.Fpdf, x, y float64, local bool) float64 {
 	translator := pdf.UnicodeTranslatorFromDescriptor("")
@@ -367,10 +456,50 @@ func DrawDestinatarioCorreiosLogoDivisor(pdf *gofpdf.Fpdf, x, y float64, local b
 	} else {
 		correiosLogoImagePath = filepath.Join("/opt", "bin", "images", "correios-logo.png")
 	}
-	addImage(pdf, correiosLogoImagePath, x+labelWidth-22, y+1, imageWidth, imageHeight)
+	addImage(pdf, correiosLogoImagePath, x+labelWidth-22, y+1, imageWidth, imageHeight, false)
 
 	return y + 8.0
 }
+
+func DrawSmallDestinatarioCorreiosLogoDivisor(pdf *gofpdf.Fpdf, x, y float64, local bool) float64 {
+	translator := pdf.UnicodeTranslatorFromDescriptor("")
+	const DESTINATARIO = "DESTINATÁRIO   "
+	destinatarioTextWidth := pdf.GetStringWidth(DESTINATARIO) + 10
+	lineHeight := 8.0
+	fontSize := 12.0
+
+	pdf.SetFont("Arial", "B", fontSize)
+
+	pdf.SetLineWidth(0.5)
+	pdf.Line(x, y, x+labelWidth-7, y)
+	pdf.SetLineWidth(defaultLineWidth)
+
+	//! DESENHA O RETANGULO COM FUNDO PRETO
+	pdf.SetFillColor(0, 0, 0)
+	pdf.Rect(x, y, destinatarioTextWidth, lineHeight, "F")
+
+	destinatarioTextX := x + 1
+	destinatarioTextY := y + (lineHeight / 2) + (pdf.PointConvert(fontSize) / 2) - 0.5
+	pdf.SetTextColor(255, 255, 255)
+	pdf.Text(destinatarioTextX, destinatarioTextY, translator(DESTINATARIO))
+	pdf.SetTextColor(0, 0, 0)
+
+	widthHeightRatio := 4781.0 / 958.0
+	imageWidth := 20.0
+	imageHeight := imageWidth / widthHeightRatio
+
+	var correiosLogoImagePath string
+	if local {
+		correiosLogoImagePath = filepath.Join("../../layers/images", "correios-logo.png")
+	} else {
+		correiosLogoImagePath = filepath.Join("/opt", "bin", "images", "correios-logo.png")
+	}
+	addImage(pdf, correiosLogoImagePath, x+labelWidth-22-7, y+1, imageWidth, imageHeight, false)
+
+	return y + 8.0
+}
+
+//-----------------------------------------------------------------
 
 func buildLogradouroDestinatarioString(destinatario types.Destinatario) string {
 	var hasNumerodestinatario = destinatario.NumeroEndDestinatario != ""
@@ -499,6 +628,21 @@ func DrawSeparadorRemetente(pdf *gofpdf.Fpdf, x, y float64) float64 {
 	nextY := paddingTop + y + paddingBottom
 	return nextY
 }
+
+// ! ========== SEPARADOR REMETENTE ==========
+func DrawSmallSeparadorRemetente(pdf *gofpdf.Fpdf, x, y float64) float64 {
+	paddingTop := 2.0
+	paddingBottom := 4.0
+
+	pdf.SetLineWidth(0.5)
+	pdf.Line(x+3.5, y+paddingTop, x+labelWidth-3.5, y+paddingTop)
+	pdf.SetLineWidth(defaultLineWidth)
+
+	nextY := paddingTop + y + paddingBottom
+	return nextY
+}
+
+//----------------------------------------------------
 
 func buildLogradouroRemetenteString(remetente types.Remetente) string {
 	var hasNumeroRemetente = remetente.NumeroRemetente != ""

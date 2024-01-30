@@ -31,7 +31,7 @@ func GenerateLabelsPDFLocal(correiosLog types.CorreiosLog) error {
 	for k, objetoPostalChunk := range chunkifiedObjetoPostal {
 		fmt.Println("   - Desenhando a página ", k)
 		pdf.AddPage()
-		DrawDottedLines(pdf)
+		//DrawDottedLines(pdf)
 
 		subdivisionStartPoints := []struct{ x, y float64 }{
 			{0, 0},
@@ -43,7 +43,7 @@ func GenerateLabelsPDFLocal(correiosLog types.CorreiosLog) error {
 		for i, objetoPostal := range objetoPostalChunk {
 			fmt.Println("     - Desenhando a etiqueta ", i)
 			startPoint := subdivisionStartPoints[i]
-			DrawLabel(pdf, startPoint.x, startPoint.y, labelWidth, labelHeight, i, idPlp, remetente, objetoPostal, true)
+			DrawSmallLabel(pdf, startPoint.x, startPoint.y, labelWidth, labelHeight, i, idPlp, remetente, objetoPostal, true)
 		}
 	}
 
@@ -61,7 +61,7 @@ func GenerateLabelsPDF(correiosLog types.CorreiosLog) (string, error) {
 	for k, objetoPostalChunk := range chunkifiedObjetoPostal {
 		fmt.Println("   - Desenhando a página ", k+1)
 		pdf.AddPage()
-		DrawDottedLines(pdf)
+		//DrawDottedLines(pdf)
 
 		subdivisionStartPoints := []struct{ x, y float64 }{
 			{0, 0},
@@ -73,7 +73,7 @@ func GenerateLabelsPDF(correiosLog types.CorreiosLog) (string, error) {
 		for i, objetoPostal := range objetoPostalChunk {
 			fmt.Println("     - Desenhando a etiqueta ", i+1)
 			startPoint := subdivisionStartPoints[i]
-			DrawLabel(pdf, startPoint.x, startPoint.y, labelWidth, labelHeight, i, idPlp, remetente, objetoPostal, false)
+			DrawSmallLabel(pdf, startPoint.x, startPoint.y, labelWidth, labelHeight, i, idPlp, remetente, objetoPostal, false)
 		}
 	}
 
@@ -131,6 +131,50 @@ func DrawLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, index int, idPlp i
 
 	//! SEPARADOR REMETENTE
 	nextY = DrawSeparadorRemetente(pdf, x, nextY)
+
+	//! DADOS REMETENTE
+	DrawDadosRemetente(pdf, x+paddingLeft/2, nextY, remetente)
+}
+
+func DrawSmallLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, index int, idPlp int, remetente types.Remetente, objetoPostal types.ObjetoPostal, local bool) {
+	pesoObjeto := objetoPostal.Peso
+	codRastreio := FormatTrackingCode(objetoPostal.NumeroEtiqueta)
+	codServicoPostagem := objetoPostal.CodigoServicoPostagem
+	tipoServicoImagem := findTipoServicoImagemByCodServicoPostagem(codServicoPostagem)
+	fmt.Println("     - Tipo serviço postagem etiqueta", tipoServicoImagem)
+
+	dataMatrixBase64String := objetoPostal.Base64.Datamatrix
+	barcodeBase64String := objetoPostal.Base64.Code
+	destinatarioBarcodeBase64String := objetoPostal.Base64.CepBarcode
+
+	paddingTop := 2.0 + 4.75
+	paddingLeft := 5.0 + 3.5
+	var nextY = y + paddingTop
+
+	DrawSmallDelimiter(pdf, x, y)
+	//! LOGO FAVOR, DATAMATRIX, TIPO SERVIÇO LOGO E numero PLP
+	nextY = DrawSmallFirstRow(pdf, x+paddingLeft, nextY, idPlp, tipoServicoImagem, dataMatrixBase64String, local)
+	//! PEDIDO, NF E PESO
+	nextY = DrawSmallSecondRow(pdf, x+paddingLeft, nextY, pesoObjeto)
+	//! CÓDIGO DE RASTREIO
+	nextY = DrawTrackingCode(pdf, x, nextY, codRastreio)
+
+	//! BARRA DE CÓDIGO
+	nextY = DrawBarcode(pdf, x, nextY, barcodeBase64String)
+	//! RECEBEDOR, ASSINATURA e DOCUMENTO
+	nextY = DrawSmallRecebedorAssinaturaDocumentoLines(pdf, x+paddingLeft, nextY)
+
+	//! SEPARADOR DESTINATÁRIO E LOGO CORREIOS
+	nextY = DrawSmallDestinatarioCorreiosLogoDivisor(pdf, x+3.5, nextY, local)
+
+	//! DADOS DESTINATÁRIO
+	nextY = DrawDadosDestinatario(pdf, x+paddingLeft, nextY, objetoPostal.Destinatario, objetoPostal.Nacional)
+
+	//! BARRA DE CODIGO DESTINATARIO
+	nextY = DrawDestinatarioBarCode(pdf, x+paddingLeft, nextY, destinatarioBarcodeBase64String)
+
+	//! SEPARADOR REMETENTE
+	nextY = DrawSmallSeparadorRemetente(pdf, x, nextY)
 
 	//! DADOS REMETENTE
 	DrawDadosRemetente(pdf, x+paddingLeft/2, nextY, remetente)
