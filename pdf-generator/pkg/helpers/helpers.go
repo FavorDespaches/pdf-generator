@@ -26,9 +26,12 @@ const (
 	destinatarioBarCodeWidth  = 40.0
 	destinatarioBarCodeHeight = 18.0
 	defaultLineWidth          = 0.3
+	PAC_FILEPATH              = "pac.png"
+	SEDEX_STANDARD_FILEPATH   = "sedex-standard.png"
 	SEDEX_10_FILEPATH         = "sedex-10.png"
 	SEDEX_12_FILEPATH         = "sedex-12.png"
 	SEDEX_HOJE_FILEPATH       = "sedex-hoje.png"
+	MINI_ENVIOS_FILEPATH      = "mini-envios.png"
 )
 
 // ! ===== DIVISOR DO PAPEL A4 EM 4 PARTES IDÊNTICAS =====
@@ -113,11 +116,11 @@ func findTipoServicoImagemByCodServicoPostagem(codServicoPostagem string) string
 	var tipoServicoImagem string
 	switch codServicoPostagem {
 	case "03298", "3298":
-		tipoServicoImagem = "pac.png"
+		tipoServicoImagem = PAC_FILEPATH
 	case "03220", "3220":
-		tipoServicoImagem = "sedex-standard.png"
+		tipoServicoImagem = SEDEX_STANDARD_FILEPATH
 	case "04227", "4227":
-		tipoServicoImagem = "mini-envios.png"
+		tipoServicoImagem = MINI_ENVIOS_FILEPATH
 	case "03158", "3158":
 		tipoServicoImagem = SEDEX_10_FILEPATH
 	case "03140", "3140":
@@ -148,10 +151,10 @@ func DrawFirstRow(pdf *gofpdf.Fpdf, x, y float64, idPlp int, tipoServicoImagem s
 	}
 
 	keepAspectRatio := false
-	ratio := 1.0
-	if tipoServicoImagem == SEDEX_10_FILEPATH || tipoServicoImagem == SEDEX_12_FILEPATH || tipoServicoImagem == SEDEX_HOJE_FILEPATH {
+	ratio := 1.4
+	if tipoServicoImagem == MINI_ENVIOS_FILEPATH {
 		keepAspectRatio = true
-		ratio = 1.4
+		ratio = 1.0
 	}
 
 	addImage(pdf, tipoServicoImagemPath, tipoServicoX, y, ratio*tipoServicoSize, tipoServicoSize, keepAspectRatio)
@@ -201,12 +204,11 @@ func DrawSmallFirstRow(pdf *gofpdf.Fpdf, x, y float64, idPlp int, tipoServicoIma
 	}
 
 	keepAspectRatio := false
-	ratio := 1.0
-	if tipoServicoImagem == SEDEX_10_FILEPATH || tipoServicoImagem == SEDEX_12_FILEPATH || tipoServicoImagem == SEDEX_HOJE_FILEPATH {
+	ratio := 1.4
+	if tipoServicoImagem == MINI_ENVIOS_FILEPATH {
 		keepAspectRatio = true
-		ratio = 1.4
+		ratio = 1.0
 	}
-
 	addImage(pdf, tipoServicoImagemPath, tipoServicoX, y, ratio*tipoServicoSize, tipoServicoSize, keepAspectRatio)
 
 	idPlpX := tipoServicoX - 0.7

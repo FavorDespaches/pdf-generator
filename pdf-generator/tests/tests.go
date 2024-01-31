@@ -66,7 +66,7 @@ func main() {
 				},
 			},
 			{
-				CodigoServicoPostagem: "03298",
+				CodigoServicoPostagem: "03220",
 				Peso:                  20,
 				Destinatario: types.Destinatario{
 					NomeDestinatario:        "Nelson Mendes Jr.",
@@ -101,7 +101,7 @@ func main() {
 				},
 			},
 			{
-				CodigoServicoPostagem: "03298",
+				CodigoServicoPostagem: "04227",
 				Peso:                  20,
 				Destinatario: types.Destinatario{
 					NomeDestinatario:        "Nelson Mendes Jr.",
@@ -136,7 +136,7 @@ func main() {
 				},
 			},
 			{
-				CodigoServicoPostagem: "03298",
+				CodigoServicoPostagem: "03158",
 				Peso:                  20,
 				Destinatario: types.Destinatario{
 					NomeDestinatario:        "Nelson Mendes Jr.",

@@ -101,8 +101,8 @@ func DrawLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, index int, idPlp i
 	barcodeBase64String := objetoPostal.Base64.Code
 	destinatarioBarcodeBase64String := objetoPostal.Base64.CepBarcode
 
-	paddingTop := 2.0
-	paddingLeft := 5.0
+	paddingTop := 4.0
+	paddingLeft := 6.0
 	var nextY = y + paddingTop
 
 	//! LOGO FAVOR, DATAMATRIX, TIPO SERVIÇO LOGO E numero PLP
@@ -133,7 +133,7 @@ func DrawLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, index int, idPlp i
 	nextY = DrawSeparadorRemetente(pdf, x, nextY)
 
 	//! DADOS REMETENTE
-	DrawDadosRemetente(pdf, x+paddingLeft/2, nextY, remetente)
+	DrawDadosRemetente(pdf, x+paddingLeft, nextY, remetente)
 }
 
 func DrawSmallLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, index int, idPlp int, remetente types.Remetente, objetoPostal types.ObjetoPostal, local bool) {
@@ -147,8 +147,8 @@ func DrawSmallLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, index int, id
 	barcodeBase64String := objetoPostal.Base64.Code
 	destinatarioBarcodeBase64String := objetoPostal.Base64.CepBarcode
 
-	paddingTop := 2.0 + 4.75
-	paddingLeft := 5.0 + 3.5
+	paddingTop := 3.5 + 4.75
+	paddingLeft := 6.0 + 3.5
 	var nextY = y + paddingTop
 
 	DrawSmallDelimiter(pdf, x, y)
@@ -177,5 +177,5 @@ func DrawSmallLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, index int, id
 	nextY = DrawSmallSeparadorRemetente(pdf, x, nextY)
 
 	//! DADOS REMETENTE
-	DrawDadosRemetente(pdf, x+paddingLeft/2, nextY, remetente)
+	DrawDadosRemetente(pdf, x+paddingLeft, nextY, remetente)
 }
