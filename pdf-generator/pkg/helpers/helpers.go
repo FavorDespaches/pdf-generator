@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/FavorDespaches/pdf-generator/pkg/types"
@@ -23,6 +24,7 @@ const (
 	tipoServicoSize           = 20.0
 	barcodeWidth              = 80.0
 	barcodeHeight             = 18.0
+	dadosDestinatarioHeight   = 46.4
 	destinatarioBarCodeWidth  = 40.0
 	destinatarioBarCodeHeight = 18.0
 	defaultLineWidth          = 0.3
@@ -70,7 +72,7 @@ func addImage(pdf *gofpdf.Fpdf, imagePath string, x, y, width, height float64, k
 	ext := strings.ToUpper(filepath.Ext(imagePath)[1:])
 
 	// Debugging: Print the imagePath and ImageType
-	fmt.Printf("Image path: %s, Image type: %s\n", imagePath, ext)
+	// fmt.Printf("Image path: %s, Image type: %s\n", imagePath, ext)
 
 	options := gofpdf.ImageOptions{
 		ReadDpi:   true,
@@ -112,7 +114,7 @@ func addBase64ImageToPDF(pdf *gofpdf.Fpdf, base64String string, x, y, w, h float
 }
 
 func findTipoServicoImagemByCodServicoPostagem(codServicoPostagem string) string {
-	fmt.Println("codServicoPostagem:", codServicoPostagem)
+	// fmt.Println("codServicoPostagem:", codServicoPostagem)
 	var tipoServicoImagem string
 	switch codServicoPostagem {
 	case "03298", "3298":
@@ -297,7 +299,7 @@ func DrawSmallSecondRow(pdf *gofpdf.Fpdf, x, y float64, peso float64) float64 {
 	pdf.SetFont("Arial", "", 8)
 	pdf.CellFormat(tipoServicoSize, lineHeight, pesoText, "", 0, "L", false, 0, "")
 
-	nextY := y + 4
+	nextY := y + 2.0
 	return nextY
 }
 
@@ -317,7 +319,7 @@ func DrawTrackingCode(pdf *gofpdf.Fpdf, x, y float64, trackingCode string) float
 	pdf.SetXY(startX, y)
 	pdf.CellFormat(textWidth, 10, trackingCode, "", 0, "C", false, 0, "")
 
-	return y + 8
+	return y + 8.0
 }
 
 // ! ========== BARRA DE CÓDIGO MAIOR ==========
@@ -331,7 +333,8 @@ func DrawBarcode(pdf *gofpdf.Fpdf, x, y float64, barcodeBase64String string) flo
 		panic(errBarcodeString)
 	}
 
-	return y + barcodeHeight
+	barcodePaddingBottom := 5.0
+	return y + barcodeHeight + barcodePaddingBottom
 }
 
 // ! ========== ASSINATURAS ==========
@@ -389,7 +392,7 @@ func DrawSmallRecebedorAssinaturaDocumentoLines(pdf *gofpdf.Fpdf, x, y float64) 
 
 	//! RECEBEDOR
 	recebedorX := x
-	recebedorY := y + lineHeight
+	recebedorY := y
 
 	recebedorLineXStart := recebedorX + pdf.GetStringWidth(RECEBEDOR)
 	recebedorLineXEnd := x + labelWidth - 10 - 4
@@ -416,7 +419,8 @@ func DrawSmallRecebedorAssinaturaDocumentoLines(pdf *gofpdf.Fpdf, x, y float64) 
 	pdf.Text(documentoX, documentoY, DOCUMENTO)
 	pdf.Line(documentoLineXStart, documentoY, documentoLineXEnd, documentoY)
 
-	nextY := documentoY + 4
+	recebedorAssinaturaPaddingBottom := 2.0
+	nextY := documentoY + recebedorAssinaturaPaddingBottom
 
 	return nextY
 }
@@ -472,9 +476,11 @@ func DrawSmallDestinatarioCorreiosLogoDivisor(pdf *gofpdf.Fpdf, x, y float64, lo
 
 	pdf.SetFont("Arial", "B", fontSize)
 
-	pdf.SetLineWidth(0.5)
+	//pdf.SetLineWidth(0.3)
+	pdf.Line(x, y, x, y+dadosDestinatarioHeight)
 	pdf.Line(x, y, x+labelWidth-7, y)
-	pdf.SetLineWidth(defaultLineWidth)
+	pdf.Line(x+labelWidth-7, y, x+labelWidth-7, y+dadosDestinatarioHeight)
+	//pdf.SetLineWidth(defaultLineWidth)
 
 	//! DESENHA O RETANGULO COM FUNDO PRETO
 	pdf.SetFillColor(0, 0, 0)
@@ -585,7 +591,7 @@ func DrawDadosDestinatario(pdf *gofpdf.Fpdf, x, y float64, destinatario types.De
 	complementoBairroDestinatarioText := translator(complementoBairroDestinatarioString)
 	pdf.Text(complementoBairroDestinatarioX, complementoBairroDestinatarioY, complementoBairroDestinatarioText)
 
-	cepCidadeUfDestinatarioY := complementoBairroDestinatarioY + lineHeight*1.3
+	cepCidadeUfDestinatarioY := complementoBairroDestinatarioY + lineHeight*1.1
 
 	pdf.SetFont("Arial", "B", fontSize)
 	cepDestinatarioX := x
@@ -600,7 +606,7 @@ func DrawDadosDestinatario(pdf *gofpdf.Fpdf, x, y float64, destinatario types.De
 	cidadeUfDestinatarioText := translator(cidadeUfDestinatarioString)
 	pdf.Text(cidadeUfDestinatarioX, cepCidadeUfDestinatarioY, cidadeUfDestinatarioText)
 
-	nextY := cepCidadeUfDestinatarioY + lineHeight
+	nextY := cepCidadeUfDestinatarioY + 2.0
 
 	return nextY
 }
@@ -616,6 +622,46 @@ func DrawDestinatarioBarCode(pdf *gofpdf.Fpdf, x, y float64, destinatarioBarcode
 	}
 
 	return y + destinatarioBarCodeHeight
+}
+
+// ! ========== OBSERVAÇÕES ==========
+func DrawObservacoes(pdf *gofpdf.Fpdf, x, y float64, servicoAdicional types.ServicoAdicional) {
+	codigoServicoAdicional := servicoAdicional.CodigoServicoAdicional
+
+	translator := pdf.UnicodeTranslatorFromDescriptor("")
+	fontSize := 9.0
+	pdf.SetFont("Arial", "", fontSize)
+	observacoesTextString := "Obs.:"
+
+	var observacoes []string
+	for _, codigoStr := range codigoServicoAdicional {
+		codigo, err := strconv.Atoi(codigoStr)
+		if err != nil {
+			continue
+		}
+
+		switch codigo {
+		case 1:
+			observacoes = append(observacoes, "Aviso de Recebimento")
+		case 2:
+			observacoes = append(observacoes, "Mão Própria")
+		case 19, 64, 65, 75, 76:
+			observacoes = append(observacoes, "Valor Declarado")
+		}
+	}
+
+	if len(observacoes) > 0 {
+		observacoesX := x + 1.4*destinatarioBarCodeWidth
+		currentY := y
+		pdf.Text(observacoesX, currentY, translator("Obs.:"))
+		servicoasAdicionaisX := observacoesX + pdf.GetStringWidth("Obs.:") + 0.5
+		for _, servAdicional := range observacoes {
+			pdf.Text(servicoasAdicionaisX, currentY, translator(servAdicional))
+			currentY += 4.0
+		}
+		observacoesTextString += " " + strings.Join(observacoes, ", ")
+	}
+	// pdf.Text(observacoesX, observacoesY, observacoesText)
 }
 
 // ! ========== SEPARADOR REMETENTE ==========
@@ -636,9 +682,9 @@ func DrawSmallSeparadorRemetente(pdf *gofpdf.Fpdf, x, y float64) float64 {
 	paddingTop := 2.0
 	paddingBottom := 4.0
 
-	pdf.SetLineWidth(0.5)
+	//pdf.SetLineWidth(0.5)
 	pdf.Line(x+3.5, y+paddingTop, x+labelWidth-3.5, y+paddingTop)
-	pdf.SetLineWidth(defaultLineWidth)
+	//pdf.SetLineWidth(defaultLineWidth)
 
 	nextY := paddingTop + y + paddingBottom
 	return nextY

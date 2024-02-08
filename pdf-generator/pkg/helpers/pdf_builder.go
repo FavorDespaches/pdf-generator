@@ -141,7 +141,9 @@ func DrawSmallLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, index int, id
 	codRastreio := FormatTrackingCode(objetoPostal.NumeroEtiqueta)
 	codServicoPostagem := objetoPostal.CodigoServicoPostagem
 	tipoServicoImagem := findTipoServicoImagemByCodServicoPostagem(codServicoPostagem)
-	fmt.Println("     - Tipo serviço postagem etiqueta", tipoServicoImagem)
+
+	fmt.Println("        * Tipo serviço postagem: ", tipoServicoImagem)
+	fmt.Println()
 
 	dataMatrixBase64String := objetoPostal.Base64.Datamatrix
 	barcodeBase64String := objetoPostal.Base64.Code
@@ -151,31 +153,28 @@ func DrawSmallLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, index int, id
 	paddingLeft := 6.0 + 3.5
 	var nextY = y + paddingTop
 
-	DrawSmallDelimiter(pdf, x, y)
+	//DrawSmallDelimiter(pdf, x, y)
 	//! LOGO FAVOR, DATAMATRIX, TIPO SERVIÇO LOGO E numero PLP
 	nextY = DrawSmallFirstRow(pdf, x+paddingLeft, nextY, idPlp, tipoServicoImagem, dataMatrixBase64String, local)
 	//! PEDIDO, NF E PESO
 	nextY = DrawSmallSecondRow(pdf, x+paddingLeft, nextY, pesoObjeto)
 	//! CÓDIGO DE RASTREIO
 	nextY = DrawTrackingCode(pdf, x, nextY, codRastreio)
-
 	//! BARRA DE CÓDIGO
 	nextY = DrawBarcode(pdf, x, nextY, barcodeBase64String)
 	//! RECEBEDOR, ASSINATURA e DOCUMENTO
 	nextY = DrawSmallRecebedorAssinaturaDocumentoLines(pdf, x+paddingLeft, nextY)
-
 	//! SEPARADOR DESTINATÁRIO E LOGO CORREIOS
+	//fmt.Printf("nextY DrawSmallDestinatarioCorreiosLogoDivisor %f\n", nextY)
 	nextY = DrawSmallDestinatarioCorreiosLogoDivisor(pdf, x+3.5, nextY, local)
-
 	//! DADOS DESTINATÁRIO
 	nextY = DrawDadosDestinatario(pdf, x+paddingLeft, nextY, objetoPostal.Destinatario, objetoPostal.Nacional)
-
 	//! BARRA DE CODIGO DESTINATARIO
+	DrawObservacoes(pdf, x, nextY, objetoPostal.ServicoAdicional)
 	nextY = DrawDestinatarioBarCode(pdf, x+paddingLeft, nextY, destinatarioBarcodeBase64String)
-
+	//fmt.Printf("nextY DrawSmallSeparadorRemetente %f\n", nextY)
 	//! SEPARADOR REMETENTE
 	nextY = DrawSmallSeparadorRemetente(pdf, x, nextY)
-
 	//! DADOS REMETENTE
 	DrawDadosRemetente(pdf, x+paddingLeft, nextY, remetente)
 }

@@ -52,7 +52,7 @@ func main() {
 					DimensaoLargura:     20.0,
 				},
 				ServicoAdicional: types.ServicoAdicional{
-					CodigoServicoAdicional: []string{"025"},
+					CodigoServicoAdicional: []string{"025", "001", "002", "019"},
 					SiglaServicoAdicional:  []string{},
 				},
 				NumeroEtiqueta:      "TI708197798BR",
@@ -87,7 +87,7 @@ func main() {
 					DimensaoLargura:     20.0,
 				},
 				ServicoAdicional: types.ServicoAdicional{
-					CodigoServicoAdicional: []string{"025"},
+					CodigoServicoAdicional: []string{"025", "002"},
 					SiglaServicoAdicional:  []string{},
 				},
 				NumeroEtiqueta:      "TI708197798BR",
@@ -157,7 +157,7 @@ func main() {
 					DimensaoLargura:     20.0,
 				},
 				ServicoAdicional: types.ServicoAdicional{
-					CodigoServicoAdicional: []string{"025"},
+					CodigoServicoAdicional: []string{"025", "019"},
 					SiglaServicoAdicional:  []string{},
 				},
 				NumeroEtiqueta:      "TI708197798BR",
