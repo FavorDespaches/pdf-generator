@@ -191,7 +191,7 @@ func DrawFirstRow(pdf *gofpdf.Fpdf, x, y float64, idPlp int, tipoServicoImagem s
 }
 
 // ! ===== PRIMEIRA LINHA DA ETIQUETA =====
-func DrawSmallFirstRow(pdf *gofpdf.Fpdf, x, y float64, idPlp int, tipoServicoImagem string, dataMatrixBase64String string, local bool) float64 {
+func DrawSmallFirstRow(pdf *gofpdf.Fpdf, x, y float64, idPrePostagem string, tipoServicoImagem string, dataMatrixBase64String string, local bool) float64 {
 	spaceBetween := 12.0 // Space between elements
 
 	// Calculate positions based on the dimensions and space between elements
@@ -213,12 +213,12 @@ func DrawSmallFirstRow(pdf *gofpdf.Fpdf, x, y float64, idPlp int, tipoServicoIma
 	}
 	addImage(pdf, tipoServicoImagemPath, tipoServicoX, y, ratio*tipoServicoSize, tipoServicoSize, keepAspectRatio)
 
-	idPlpX := tipoServicoX - 0.7
-	idPLpY := y + tipoServicoSize + 0.25
-	idPlpText := fmt.Sprintf("PLP: %v", idPlp)
-	pdf.SetXY(idPlpX, idPLpY)
-	pdf.SetFont("Arial", "", 8)
-	pdf.CellFormat(tipoServicoSize, 8, idPlpText, "", 0, "LM", false, 0, "")
+	//idPlpX := tipoServicoX - 0.7
+	//idPLpY := y + tipoServicoSize + 0.25
+	//idPlpText := fmt.Sprintf("ID: %s", idPrePostagem)
+	//pdf.SetXY(idPlpX, idPLpY)
+	//pdf.SetFont("Arial", "", 8)
+	//pdf.CellFormat(tipoServicoSize, 8, idPlpText, "", 0, "LM", false, 0, "")
 
 	//! DATA MATRIX
 	// errDataMatrix := generateDataMatrix(pdf, dataMatrixBase64String, dataMatrixX, y, dataMatrixSize, dataMatrixSize)
@@ -279,19 +279,20 @@ func DrawSecondRow(pdf *gofpdf.Fpdf, x, y float64, peso float64) float64 {
 	return nextY
 }
 
-func DrawSmallSecondRow(pdf *gofpdf.Fpdf, x, y float64, peso float64) float64 {
+func DrawSmallSecondRow(pdf *gofpdf.Fpdf, x, y float64, idPrePostagem string, peso float64) float64 {
 	spaceBetween := 12.0
 	lineHeight := 6.0
 
 	pedidoTextX := x - 0.7
+	pedidoText := fmt.Sprintf("Id: %s", idPrePostagem)
 	pdf.SetXY(pedidoTextX, y)
 	pdf.SetFont("Arial", "", 8)
-	pdf.CellFormat(tipoServicoSize, lineHeight, "Pedido: 0", "", 0, "L", false, 0, "")
+	pdf.CellFormat(tipoServicoSize, lineHeight, pedidoText, "", 0, "L", false, 0, "")
 
 	nfTextX := x + tipoServicoSize + 1.3*spaceBetween - 0.7
-	pdf.SetXY(nfTextX, y)
-	pdf.SetFont("Arial", "", 8)
-	pdf.CellFormat(tipoServicoSize, lineHeight, "NF: 0", "", 0, "L", false, 0, "")
+	// pdf.SetXY(nfTextX, y)
+	// pdf.SetFont("Arial", "", 8)
+	// pdf.CellFormat(tipoServicoSize, lineHeight, "NF: 0", "", 0, "L", false, 0, "")
 
 	pesoTextX := nfTextX + dataMatrixSize + 0.7*spaceBetween - 0.7
 	pesoText := fmt.Sprintf("Peso (g): %v", peso)
@@ -509,8 +510,8 @@ func DrawSmallDestinatarioCorreiosLogoDivisor(pdf *gofpdf.Fpdf, x, y float64, lo
 
 //-----------------------------------------------------------------
 
-func buildLogradouroDestinatarioString(destinatario types.Destinatario) string {
-	var hasNumerodestinatario = destinatario.NumeroEndDestinatario != ""
+func buildLogradouroDestinatarioString(destinatario types.SolicitarEtiquetaDestinatario) string {
+	var hasNumerodestinatario = destinatario.NumeroDestinatario != ""
 
 	var logradouroDestinatarioString string
 
@@ -518,40 +519,45 @@ func buildLogradouroDestinatarioString(destinatario types.Destinatario) string {
 
 	if hasNumerodestinatario {
 		logradouroDestinatarioString += ", "
-		logradouroDestinatarioString += destinatario.NumeroEndDestinatario
+		logradouroDestinatarioString += destinatario.NumeroDestinatario
 	}
 
 	return logradouroDestinatarioString
 }
 
-func buildComplementoBairroDestinatarioString(destinatario types.Destinatario, nacional types.Nacional) string {
-	var hasComplemento = destinatario.ComplementoDestinatario != ""
-	var hasBairro = nacional.BairroDestinatario != ""
+func buildComplementoBairroDestinatarioString(destinatario types.SolicitarEtiquetaDestinatario) string {
+	var hasComplemento bool
+	if destinatario.ComplementoDestinatario != nil && *destinatario.ComplementoDestinatario != "" {
+		hasComplemento = true
+	} else {
+		hasComplemento = false
+	}
+	var hasBairro = destinatario.BairroDestinatario != ""
 
 	var complementoBairroDestinatarioString string
 
 	if hasComplemento {
-		complementoBairroDestinatarioString += destinatario.ComplementoDestinatario
+		complementoBairroDestinatarioString += *destinatario.ComplementoDestinatario
 	}
 	if hasComplemento && hasBairro {
 		complementoBairroDestinatarioString += ", "
 	}
 	if hasBairro {
-		complementoBairroDestinatarioString += nacional.BairroDestinatario
+		complementoBairroDestinatarioString += destinatario.BairroDestinatario
 	}
 
 	return complementoBairroDestinatarioString
 }
 
-func buildCepDestinatarioString(nacional types.Nacional) string {
+func buildCepDestinatarioString(destinatario types.SolicitarEtiquetaDestinatario) string {
 	var formattedCEP string
-	cep := nacional.CepDestinatario
-	lenCEP := len(nacional.CepDestinatario)
+	cep := destinatario.CepDestinatario
+	lenCEP := len(destinatario.CepDestinatario)
 
 	if lenCEP != 8 {
 		if lenCEP == 7 {
 			formattedCEP += "0"
-			formattedCEP += nacional.CepDestinatario
+			formattedCEP += destinatario.CepDestinatario
 		} else {
 			panic("CEP INVÁLIDO")
 		}
@@ -562,13 +568,13 @@ func buildCepDestinatarioString(nacional types.Nacional) string {
 	return formattedCEP
 }
 
-func buildCidadeUfDestinatarioString(nacional types.Nacional) string {
-	cidadeUfDestinatarioString := fmt.Sprintf("%s / %s", nacional.CidadeDestinatario, nacional.UfDestinatario)
+func buildCidadeUfDestinatarioString(destinatario types.SolicitarEtiquetaDestinatario) string {
+	cidadeUfDestinatarioString := fmt.Sprintf("%s / %s", destinatario.CidadeDestinatario, destinatario.UfDestinatario)
 	return cidadeUfDestinatarioString
 }
 
 // ! ========== DADOS DO DESTINATÁRIO ==========
-func DrawDadosDestinatario(pdf *gofpdf.Fpdf, x, y float64, destinatario types.Destinatario, nacional types.Nacional) float64 {
+func DrawDadosDestinatario(pdf *gofpdf.Fpdf, x, y float64, destinatario types.SolicitarEtiquetaDestinatario) float64 {
 	translator := pdf.UnicodeTranslatorFromDescriptor("")
 	fontSize := 9.0
 	lineHeight := 4.0
@@ -587,7 +593,7 @@ func DrawDadosDestinatario(pdf *gofpdf.Fpdf, x, y float64, destinatario types.De
 
 	complementoBairroDestinatarioX := x
 	complementoBairroDestinatarioY := logradouroDestinatarioY + lineHeight
-	complementoBairroDestinatarioString := buildComplementoBairroDestinatarioString(destinatario, nacional)
+	complementoBairroDestinatarioString := buildComplementoBairroDestinatarioString(destinatario)
 	complementoBairroDestinatarioText := translator(complementoBairroDestinatarioString)
 	pdf.Text(complementoBairroDestinatarioX, complementoBairroDestinatarioY, complementoBairroDestinatarioText)
 
@@ -595,14 +601,14 @@ func DrawDadosDestinatario(pdf *gofpdf.Fpdf, x, y float64, destinatario types.De
 
 	pdf.SetFont("Arial", "B", fontSize)
 	cepDestinatarioX := x
-	cepDestinatarioString := buildCepDestinatarioString(nacional)
+	cepDestinatarioString := buildCepDestinatarioString(destinatario)
 	cepDestinatarioText := translator(cepDestinatarioString)
 	pdf.Text(cepDestinatarioX, cepCidadeUfDestinatarioY, cepDestinatarioText)
 
 	pdf.SetFont("Arial", "", fontSize)
 	cidadeUfDestinatarioPaddingLeft := 1.5
 	cidadeUfDestinatarioX := x + pdf.GetStringWidth(cepDestinatarioString) + cidadeUfDestinatarioPaddingLeft
-	cidadeUfDestinatarioString := buildCidadeUfDestinatarioString(nacional)
+	cidadeUfDestinatarioString := buildCidadeUfDestinatarioString(destinatario)
 	cidadeUfDestinatarioText := translator(cidadeUfDestinatarioString)
 	pdf.Text(cidadeUfDestinatarioX, cepCidadeUfDestinatarioY, cidadeUfDestinatarioText)
 
@@ -625,7 +631,11 @@ func DrawDestinatarioBarCode(pdf *gofpdf.Fpdf, x, y float64, destinatarioBarcode
 }
 
 // ! ========== OBSERVAÇÕES ==========
-func DrawObservacoes(pdf *gofpdf.Fpdf, x, y float64, servicoAdicional types.ServicoAdicional) {
+func DrawObservacoes(pdf *gofpdf.Fpdf, x, y float64, servicoAdicional *types.ServicoAdicional) {
+	if servicoAdicional == nil {
+		return
+	}
+
 	codigoServicoAdicional := servicoAdicional.CodigoServicoAdicional
 
 	translator := pdf.UnicodeTranslatorFromDescriptor("")
@@ -652,7 +662,7 @@ func DrawObservacoes(pdf *gofpdf.Fpdf, x, y float64, servicoAdicional types.Serv
 
 	if len(observacoes) > 0 {
 		observacoesX := x + 1.4*destinatarioBarCodeWidth
-		currentY := y
+		currentY := y + 2.0
 		pdf.Text(observacoesX, currentY, translator("Obs.:"))
 		servicoasAdicionaisX := observacoesX + pdf.GetStringWidth("Obs.:") + 0.5
 		for _, servAdicional := range observacoes {
@@ -692,7 +702,7 @@ func DrawSmallSeparadorRemetente(pdf *gofpdf.Fpdf, x, y float64) float64 {
 
 //----------------------------------------------------
 
-func buildLogradouroRemetenteString(remetente types.Remetente) string {
+func buildLogradouroRemetenteString(remetente types.SolicitarEtiquetaRemetente) string {
 	var hasNumeroRemetente = remetente.NumeroRemetente != ""
 
 	var logradouroRemetenteString string
@@ -707,14 +717,19 @@ func buildLogradouroRemetenteString(remetente types.Remetente) string {
 	return logradouroRemetenteString
 }
 
-func buildComplementoBairroRemetenteString(remetente types.Remetente) string {
-	var hasComplemento = remetente.ComplementoRemetente != ""
+func buildComplementoBairroRemetenteString(remetente types.SolicitarEtiquetaRemetente) string {
+	var hasComplemento bool
+	if remetente.ComplementoRemetente != nil && *remetente.ComplementoRemetente != "" {
+		hasComplemento = true
+	} else {
+		hasComplemento = false
+	}
 	var hasBairro = remetente.BairroRemetente != ""
 
 	var complementoBairroRemetenteString string
 
 	if hasComplemento {
-		complementoBairroRemetenteString += remetente.ComplementoRemetente
+		complementoBairroRemetenteString += *remetente.ComplementoRemetente
 	}
 	if hasComplemento && hasBairro {
 		complementoBairroRemetenteString += ", "
@@ -726,7 +741,7 @@ func buildComplementoBairroRemetenteString(remetente types.Remetente) string {
 	return complementoBairroRemetenteString
 }
 
-func buildCepRemetenteString(remetente types.Remetente) string {
+func buildCepRemetenteString(remetente types.SolicitarEtiquetaRemetente) string {
 	var formattedCEP string
 	cep := remetente.CepRemetente
 	lenCEP := len(remetente.CepRemetente)
@@ -744,13 +759,13 @@ func buildCepRemetenteString(remetente types.Remetente) string {
 	return formattedCEP
 }
 
-func buildCidadeUfRemetenteString(remetente types.Remetente) string {
+func buildCidadeUfRemetenteString(remetente types.SolicitarEtiquetaRemetente) string {
 	cidadeUfRemetenteString := fmt.Sprintf("%s / %s", remetente.CidadeRemetente, remetente.UfRemetente)
 	return cidadeUfRemetenteString
 }
 
 // ! ========== DADOS DO REMETENTE ==========
-func DrawDadosRemetente(pdf *gofpdf.Fpdf, x, y float64, remetente types.Remetente) float64 {
+func DrawDadosRemetente(pdf *gofpdf.Fpdf, x, y float64, remetente types.SolicitarEtiquetaRemetente) float64 {
 	translator := pdf.UnicodeTranslatorFromDescriptor("")
 	fontSize := 8.5
 	lineHeight := 3.5

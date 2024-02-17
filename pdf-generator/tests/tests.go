@@ -7,164 +7,51 @@ import (
 )
 
 func main() {
-	correiosLog := types.CorreiosLog{
-		TipoArquivo:   "Postagem",
-		VersaoArquivo: "2.3",
-		Plp: types.PLP{
-			IdPlp:          0,
-			CartaoPostagem: "0076822516",
+	solicitarEtiquetasPDF := types.SolicitarEtiquetasPDF{
+		Remetente: types.SolicitarEtiquetaRemetente{
+			NomeRemetente:        "Empresa Exemplo",
+			LogradouroRemetente:  "Rua Exemplo",
+			NumeroRemetente:      "123",
+			ComplementoRemetente: ptrToString("Apto 101"),
+			BairroRemetente:      "Bairro Exemplo",
+			CepRemetente:         "12282220",
+			CidadeRemetente:      "Cidade Exemplo",
+			UfRemetente:          "EX",
+			TelefoneRemetente:    ptrToInt64(11987654321),
+			CpfCnpjRemetente:     "12345678000199",
 		},
-		Remetente: types.Remetente{
-			NomeRemetente:           "Gabriel Faglioni Mendes",
-			CepRemetente:            "13560520",
-			NumeroRemetente:         "37",
-			LogradouroRemetente:     "Rua Luis Vaz de Toledo Piza",
-			ComplementoRemetente:    "Apto 32",
-			BairroRemetente:         "Jardim Lutfalla",
-			CidadeRemetente:         "São Carlos",
-			UfRemetente:             "SP",
-			CienciaConteudoProibido: "S",
-			CodigoAdministrativo:    "21431817",
-			NumeroDiretoria:         74,
-			NumeroContrato:          "9912559667",
-		},
-		FormaPagamento: "5",
-		ObjetoPostal: []types.ObjetoPostal{
+		ObjetosPostais: []types.SolicitarEtiquetasPDFObjetoPostal{
 			{
+				IdPrePostagem:         "ID123456789",
 				CodigoServicoPostagem: "03298",
-				Peso:                  20,
-				Destinatario: types.Destinatario{
-					NomeDestinatario:        "Nelson Mendes Jr.",
-					LogradouroDestinatario:  "Rua Teste",
-					NumeroEndDestinatario:   "249",
-					ComplementoDestinatario: "Clinica Docvalle",
-				},
-				Nacional: types.Nacional{
-					CepDestinatario:    "12282220",
-					BairroDestinatario: "Bairro Teste",
-					CidadeDestinatario: "Caçapava",
-					UfDestinatario:     "SP",
-				},
-				DimensaoObjeto: types.DimensaoObjeto{
-					TipoObjeto:          "001",
-					DimensaoAltura:      0.0,
-					DimensaoComprimento: 20.0,
-					DimensaoLargura:     20.0,
-				},
-				ServicoAdicional: types.ServicoAdicional{
-					CodigoServicoAdicional: []string{"025", "001", "002", "019"},
-					SiglaServicoAdicional:  []string{},
-				},
-				NumeroEtiqueta:      "TI708197798BR",
-				Cubagem:             0,
-				RestricaoAnac:       "S",
-				StatusProcessamento: "0",
-				Base64: types.Base64AuxParams{
-					Datamatrix: codes.GetDatamatrix(),
-					Code:       codes.GetCode(),
-					CepBarcode: codes.GetCepBarcode(),
-				},
-			},
-			{
-				CodigoServicoPostagem: "03220",
-				Peso:                  20,
-				Destinatario: types.Destinatario{
-					NomeDestinatario:        "Nelson Mendes Jr.",
-					LogradouroDestinatario:  "Rua Teste",
-					NumeroEndDestinatario:   "249",
-					ComplementoDestinatario: "Clinica Docvalle",
-				},
-				Nacional: types.Nacional{
-					CepDestinatario:    "12282220",
-					BairroDestinatario: "Bairro Teste",
-					CidadeDestinatario: "Caçapava",
-					UfDestinatario:     "SP",
+				CodigoRastreio:        "BR123456789XX",
+				Destinatario: types.SolicitarEtiquetaDestinatario{
+					NomeDestinatario:        "Cliente Final",
+					TelefoneDestinatario:    ptrToString("11987654321"),
+					LogradouroDestinatario:  "Rua do Cliente",
+					ComplementoDestinatario: ptrToString("Casa 2"),
+					NumeroDestinatario:      "321",
+					CpfCnpjDestinatario:     ptrToString("123.456.789-00"),
+					BairroDestinatario:      "Bairro do Cliente",
+					CidadeDestinatario:      "Cidade do Cliente",
+					UfDestinatario:          "CL",
+					CepDestinatario:         "13560520",
 				},
 				DimensaoObjeto: types.DimensaoObjeto{
-					TipoObjeto:          "001",
-					DimensaoAltura:      0.0,
-					DimensaoComprimento: 20.0,
+					TipoObjeto:          "Caixa",
+					DimensaoAltura:      10.0,
 					DimensaoLargura:     20.0,
+					DimensaoComprimento: 30.0,
+					DimensaoDiametro:    0.0,
 				},
-				ServicoAdicional: types.ServicoAdicional{
-					CodigoServicoAdicional: []string{"025", "002"},
-					SiglaServicoAdicional:  []string{},
+				ServicoAdicional: &types.ServicoAdicional{
+					CodigoServicoAdicional: []string{"001", "002"},
+					ValorDeclarado:         1000.00,
+					EnderecoVizinho:        "Rua do Vizinho, 123",
+					SiglaServicoAdicional:  []string{"SA01", "SA02"},
 				},
-				NumeroEtiqueta:      "TI708197798BR",
-				Cubagem:             0,
-				RestricaoAnac:       "S",
-				StatusProcessamento: "0",
-				Base64: types.Base64AuxParams{
-					Datamatrix: codes.GetDatamatrix(),
-					Code:       codes.GetCode(),
-					CepBarcode: codes.GetCepBarcode(),
-				},
-			},
-			{
-				CodigoServicoPostagem: "04227",
-				Peso:                  20,
-				Destinatario: types.Destinatario{
-					NomeDestinatario:        "Nelson Mendes Jr.",
-					LogradouroDestinatario:  "Rua Teste",
-					NumeroEndDestinatario:   "249",
-					ComplementoDestinatario: "Clinica Docvalle",
-				},
-				Nacional: types.Nacional{
-					CepDestinatario:    "12282220",
-					BairroDestinatario: "Bairro Teste",
-					CidadeDestinatario: "Caçapava",
-					UfDestinatario:     "SP",
-				},
-				DimensaoObjeto: types.DimensaoObjeto{
-					TipoObjeto:          "001",
-					DimensaoAltura:      0.0,
-					DimensaoComprimento: 20.0,
-					DimensaoLargura:     20.0,
-				},
-				ServicoAdicional: types.ServicoAdicional{
-					CodigoServicoAdicional: []string{"025"},
-					SiglaServicoAdicional:  []string{},
-				},
-				NumeroEtiqueta:      "TI708197798BR",
-				Cubagem:             0,
-				RestricaoAnac:       "S",
-				StatusProcessamento: "0",
-				Base64: types.Base64AuxParams{
-					Datamatrix: codes.GetDatamatrix(),
-					Code:       codes.GetCode(),
-					CepBarcode: codes.GetCepBarcode(),
-				},
-			},
-			{
-				CodigoServicoPostagem: "03158",
-				Peso:                  20,
-				Destinatario: types.Destinatario{
-					NomeDestinatario:        "Nelson Mendes Jr.",
-					LogradouroDestinatario:  "Rua Teste",
-					NumeroEndDestinatario:   "249",
-					ComplementoDestinatario: "Clinica Docvalle",
-				},
-				Nacional: types.Nacional{
-					CepDestinatario:    "12282220",
-					BairroDestinatario: "Bairro Teste",
-					CidadeDestinatario: "Caçapava",
-					UfDestinatario:     "SP",
-				},
-				DimensaoObjeto: types.DimensaoObjeto{
-					TipoObjeto:          "001",
-					DimensaoAltura:      0.0,
-					DimensaoComprimento: 20.0,
-					DimensaoLargura:     20.0,
-				},
-				ServicoAdicional: types.ServicoAdicional{
-					CodigoServicoAdicional: []string{"025", "019"},
-					SiglaServicoAdicional:  []string{},
-				},
-				NumeroEtiqueta:      "TI708197798BR",
-				Cubagem:             0,
-				RestricaoAnac:       "S",
-				StatusProcessamento: "0",
-				Base64: types.Base64AuxParams{
+				Peso: 500,
+				Base64: types.Base64Strings{
 					Datamatrix: codes.GetDatamatrix(),
 					Code:       codes.GetCode(),
 					CepBarcode: codes.GetCepBarcode(),
@@ -173,8 +60,16 @@ func main() {
 		},
 	}
 
-	err := helpers.GenerateLabelsPDFLocal(correiosLog)
+	err := helpers.GenerateLabelsPDFLocal(solicitarEtiquetasPDF)
 	if err != nil {
 		panic(err)
 	}
+}
+
+func ptrToString(s string) *string {
+	return &s
+}
+
+func ptrToInt64(i int64) *int64 {
+	return &i
 }

@@ -10,14 +10,10 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 )
 
-func SolicitarEtiquetaLocal(correiosLog types.CorreiosLog) {
-	fmt.Println("\n\n========== INICIANDO LAMBDA ==========")
-}
-
 func SolicitarEtiqueta(req events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	fmt.Println("\n\n========== INICIANDO LAMBDA ==========")
-	var correiosLog types.CorreiosLog
-	err := json.Unmarshal([]byte(req.Body), &correiosLog)
+	var solicitarEtiquetasPDF types.SolicitarEtiquetasPDF
+	err := json.Unmarshal([]byte(req.Body), &solicitarEtiquetasPDF)
 
 	if err != nil {
 		errText := fmt.Sprintf("Erro no Parser do JSON: %s", err.Error())
@@ -28,7 +24,7 @@ func SolicitarEtiqueta(req events.APIGatewayProxyRequest) (*events.APIGatewayPro
 		return ApiResponse(http.StatusBadRequest, errorBody)
 	}
 
-	base64String, err := helpers.GenerateLabelsPDF(correiosLog)
+	base64String, err := helpers.GenerateLabelsPDF(solicitarEtiquetasPDF)
 
 	if err != nil {
 		errText := fmt.Sprintf("Erro GenerateLabelsPDF: %s", err.Error())
