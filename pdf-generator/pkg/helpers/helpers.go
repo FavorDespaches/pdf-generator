@@ -18,15 +18,17 @@ const (
 	pageHeight                = 297.0 // A4 height in mm
 	labelWidth                = 210.0 / 2
 	labelHeight               = 297.0 / 2
+	paddingRight              = 12.0
 	logoWidth                 = 25.0
 	logoHeight                = 25.0
 	dataMatrixSize            = 25.0
 	tipoServicoSize           = 20.0
 	barcodeWidth              = 80.0
 	barcodeHeight             = 18.0
-	dadosDestinatarioHeight   = 46.4
+	dadosDestinatarioHeight   = 42.4
 	destinatarioBarCodeWidth  = 40.0
 	destinatarioBarCodeHeight = 18.0
+	paddingDestinatario       = 3.0
 	defaultLineWidth          = 0.3
 	PAC_FILEPATH              = "pac.png"
 	SEDEX_STANDARD_FILEPATH   = "sedex-standard.png"
@@ -470,42 +472,45 @@ func DrawDestinatarioCorreiosLogoDivisor(pdf *gofpdf.Fpdf, x, y float64, local b
 
 func DrawSmallDestinatarioCorreiosLogoDivisor(pdf *gofpdf.Fpdf, x, y float64, local bool) float64 {
 	translator := pdf.UnicodeTranslatorFromDescriptor("")
-	const DESTINATARIO = "DESTINATÁRIO   "
-	destinatarioTextWidth := pdf.GetStringWidth(DESTINATARIO) + 10
+	const DESTINATARIO = "DESTINATÁRIO:"
+	// destinatarioTextWidth := pdf.GetStringWidth(DESTINATARIO) + 10
 	lineHeight := 8.0
-	fontSize := 12.0
+	fontSize := 9.0
 
+	destinatarioText := translator(DESTINATARIO)
 	pdf.SetFont("Arial", "B", fontSize)
+	pdf.Text(x+paddingDestinatario, y+lineHeight/2, destinatarioText)
 
 	//pdf.SetLineWidth(0.3)
 	pdf.Line(x, y, x, y+dadosDestinatarioHeight)
-	pdf.Line(x, y, x+labelWidth-7, y)
-	pdf.Line(x+labelWidth-7, y, x+labelWidth-7, y+dadosDestinatarioHeight)
+	pdf.Line(x, y, x+labelWidth-paddingRight, y)
+	pdf.Line(x+labelWidth-paddingRight, y, x+labelWidth-paddingRight, y+dadosDestinatarioHeight)
 	//pdf.SetLineWidth(defaultLineWidth)
 
 	//! DESENHA O RETANGULO COM FUNDO PRETO
-	pdf.SetFillColor(0, 0, 0)
-	pdf.Rect(x, y, destinatarioTextWidth, lineHeight, "F")
+	/*
+		pdf.SetFillColor(0, 0, 0)
+		pdf.Rect(x, y, destinatarioTextWidth, lineHeight, "F")
 
-	destinatarioTextX := x + 1
-	destinatarioTextY := y + (lineHeight / 2) + (pdf.PointConvert(fontSize) / 2) - 0.5
-	pdf.SetTextColor(255, 255, 255)
-	pdf.Text(destinatarioTextX, destinatarioTextY, translator(DESTINATARIO))
-	pdf.SetTextColor(0, 0, 0)
+		destinatarioTextX := x + 1
+		destinatarioTextY := y + (lineHeight / 2) + (pdf.PointConvert(fontSize) / 2) - 0.5
+		pdf.SetTextColor(255, 255, 255)
+		pdf.Text(destinatarioTextX, destinatarioTextY, translator(DESTINATARIO))
+		pdf.SetTextColor(0, 0, 0)
 
-	widthHeightRatio := 4781.0 / 958.0
-	imageWidth := 20.0
-	imageHeight := imageWidth / widthHeightRatio
+		widthHeightRatio := 4781.0 / 958.0
+		imageWidth := 20.0
+		imageHeight := imageWidth / widthHeightRatio
 
-	var correiosLogoImagePath string
-	if local {
-		correiosLogoImagePath = filepath.Join("../../layers/images", "correios-logo.png")
-	} else {
-		correiosLogoImagePath = filepath.Join("/opt", "bin", "images", "correios-logo.png")
-	}
-	addImage(pdf, correiosLogoImagePath, x+labelWidth-22-7, y+1, imageWidth, imageHeight, false)
-
-	return y + 8.0
+		var correiosLogoImagePath string
+		if local {
+			correiosLogoImagePath = filepath.Join("../../layers/images", "correios-logo.png")
+		} else {
+			correiosLogoImagePath = filepath.Join("/opt", "bin", "images", "correios-logo.png")
+		}
+		addImage(pdf, correiosLogoImagePath, x+labelWidth-22-7, y+1, imageWidth, imageHeight, false)
+	*/
+	return y + lineHeight
 }
 
 //-----------------------------------------------------------------
@@ -581,7 +586,7 @@ func DrawDadosDestinatario(pdf *gofpdf.Fpdf, x, y float64, destinatario types.So
 	pdf.SetFont("Arial", "", fontSize)
 
 	nomeDestinatarioX := x
-	nomeDestinatarioY := y + lineHeight
+	nomeDestinatarioY := y
 	nomeDestinatarioText := translator(destinatario.NomeDestinatario)
 	pdf.Text(nomeDestinatarioX, nomeDestinatarioY, nomeDestinatarioText)
 
@@ -693,7 +698,7 @@ func DrawSmallSeparadorRemetente(pdf *gofpdf.Fpdf, x, y float64) float64 {
 	paddingBottom := 4.0
 
 	//pdf.SetLineWidth(0.5)
-	pdf.Line(x+3.5, y+paddingTop, x+labelWidth-3.5, y+paddingTop)
+	pdf.Line(x, y+paddingTop, x+labelWidth-paddingRight, y+paddingTop)
 	//pdf.SetLineWidth(defaultLineWidth)
 
 	nextY := paddingTop + y + paddingBottom

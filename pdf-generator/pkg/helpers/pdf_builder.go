@@ -88,53 +88,6 @@ func GenerateLabelsPDF(solicitarEtiquetasPDF types.SolicitarEtiquetasPDF) (strin
 	return base64Str, nil
 }
 
-/*
-	func DrawLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, index int, idPlp int, remetente types.Remetente, objetoPostal types.ObjetoPostal, local bool) {
-		pesoObjeto := objetoPostal.Peso
-		codRastreio := FormatTrackingCode(objetoPostal.NumeroEtiqueta)
-		codServicoPostagem := objetoPostal.CodigoServicoPostagem
-		tipoServicoImagem := findTipoServicoImagemByCodServicoPostagem(codServicoPostagem)
-		fmt.Println("     - Tipo serviço postagem etiqueta", tipoServicoImagem)
-
-		dataMatrixBase64String := objetoPostal.Base64.Datamatrix
-		barcodeBase64String := objetoPostal.Base64.Code
-		destinatarioBarcodeBase64String := objetoPostal.Base64.CepBarcode
-
-		paddingTop := 4.0
-		paddingLeft := 6.0
-		var nextY = y + paddingTop
-
-		//! LOGO FAVOR, DATAMATRIX, TIPO SERVIÇO LOGO E numero PLP
-		nextY = DrawFirstRow(pdf, x+paddingLeft, nextY, idPlp, tipoServicoImagem, dataMatrixBase64String, local)
-
-		//! PEDIDO, NF E PESO
-		nextY = DrawSecondRow(pdf, x+paddingLeft, nextY, pesoObjeto)
-
-		//! CÓDIGO DE RASTREIO
-		nextY = DrawTrackingCode(pdf, x, nextY, codRastreio)
-
-		//! BARRA DE CÓDIGO
-		nextY = DrawBarcode(pdf, x, nextY, barcodeBase64String)
-
-		//! RECEBEDOR, ASSINATURA e DOCUMENTO
-		nextY = DrawRecebedorAssinaturaDocumentoLines(pdf, x+paddingLeft, nextY)
-
-		//! SEPARADOR DESTINATÁRIO E LOGO CORREIOS
-		nextY = DrawDestinatarioCorreiosLogoDivisor(pdf, x, nextY, local)
-
-		//! DADOS DESTINATÁRIO
-		nextY = DrawDadosDestinatario(pdf, x+paddingLeft, nextY, objetoPostal.Destinatario, objetoPostal.Nacional)
-
-		//! BARRA DE CODIGO DESTINATARIO
-		nextY = DrawDestinatarioBarCode(pdf, x+paddingLeft, nextY, destinatarioBarcodeBase64String)
-
-		//! SEPARADOR REMETENTE
-		nextY = DrawSeparadorRemetente(pdf, x, nextY)
-
-		//! DADOS REMETENTE
-		DrawDadosRemetente(pdf, x+paddingLeft, nextY, remetente)
-	}
-*/
 func DrawSmallLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, index int, remetente types.SolicitarEtiquetaRemetente, objetoPostal types.SolicitarEtiquetasPDFObjetoPostal, local bool) {
 	pesoObjeto := objetoPostal.Peso
 	codRastreio := FormatTrackingCode(objetoPostal.CodigoRastreio)
@@ -165,16 +118,16 @@ func DrawSmallLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, index int, re
 	//! RECEBEDOR, ASSINATURA e DOCUMENTO
 	nextY = DrawSmallRecebedorAssinaturaDocumentoLines(pdf, x+paddingLeft, nextY)
 	//! SEPARADOR DESTINATÁRIO E LOGO CORREIOS
-	//fmt.Printf("nextY DrawSmallDestinatarioCorreiosLogoDivisor %f\n", nextY)
-	nextY = DrawSmallDestinatarioCorreiosLogoDivisor(pdf, x+3.5, nextY, local)
+	nextY = DrawSmallDestinatarioCorreiosLogoDivisor(pdf, x+paddingLeft, nextY, local)
 	//! DADOS DESTINATÁRIO
-	nextY = DrawDadosDestinatario(pdf, x+paddingLeft, nextY, objetoPostal.Destinatario)
+	paddingDestinatario := 3.0
+	nextY = DrawDadosDestinatario(pdf, x+paddingLeft+paddingDestinatario, nextY, objetoPostal.Destinatario)
 	//! BARRA DE CODIGO DESTINATARIO
 	DrawObservacoes(pdf, x, nextY, objetoPostal.ServicoAdicional)
-	nextY = DrawDestinatarioBarCode(pdf, x+paddingLeft, nextY, destinatarioBarcodeBase64String)
+	nextY = DrawDestinatarioBarCode(pdf, x+paddingLeft+paddingDestinatario, nextY, destinatarioBarcodeBase64String)
 	//fmt.Printf("nextY DrawSmallSeparadorRemetente %f\n", nextY)
 	//! SEPARADOR REMETENTE
-	nextY = DrawSmallSeparadorRemetente(pdf, x, nextY)
+	nextY = DrawSmallSeparadorRemetente(pdf, x+paddingLeft, nextY)
 	//! DADOS REMETENTE
 	DrawDadosRemetente(pdf, x+paddingLeft, nextY, remetente)
 }

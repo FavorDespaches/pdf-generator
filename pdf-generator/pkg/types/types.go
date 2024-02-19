@@ -25,7 +25,7 @@ type SolicitarEtiquetaRemetente struct {
 	CepRemetente         string  `json:"cep_remetente"`         // CEP do remetente
 	CidadeRemetente      string  `json:"cidade_remetente"`      // Cidade do remetente
 	UfRemetente          string  `json:"uf_remetente"`          // Unidade de Federação
-	TelefoneRemetente    *int64  `json:"telefone_remetente"`    // Telefone do remetente
+	TelefoneRemetente    *string `json:"telefone_remetente"`    // Telefone do remetente
 	CpfCnpjRemetente     string  `json:"cpf_cnpj_remetente"`    // CPF ou CNPJ do remetente
 }
 

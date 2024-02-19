@@ -17,7 +17,7 @@ func main() {
 			CepRemetente:         "12282220",
 			CidadeRemetente:      "Cidade Exemplo",
 			UfRemetente:          "EX",
-			TelefoneRemetente:    ptrToInt64(11987654321),
+			TelefoneRemetente:    ptrToString("11987654321"),
 			CpfCnpjRemetente:     "12345678000199",
 		},
 		ObjetosPostais: []types.SolicitarEtiquetasPDFObjetoPostal{
