@@ -5,3 +5,7 @@
 # PARA SUBIR UMA NOVA VERSÃO
 Diriga-se para pdf-generator/cmd e rode o comando:
 - GOARCH=amd64 GOOS=linux go build main.go
+
+Nova RUNTIME:
+- GOARCH=arm64 GOOS=linux go build -o bootstrap main.go
+#- GOARCH=amd64 GOOS=linux go build -tags lambda.norpc -o bootstrap main.go

@@ -87,7 +87,8 @@ type SolicitarEtiquetasPDFObjetoPostal struct {
 	DimensaoObjeto        DimensaoObjeto                `json:"dimensaoObjeto"`
 	ServicoAdicional      *ServicoAdicional             `json:"servicoAdicional"`
 	Peso                  float64                       `json:"peso"`
-	Base64                Base64Strings                 `json:"base64"`
+	DatamatrixString      string                        `json:"datamatrixString"` // Optional. Datamatrix string
+	// Base64                Base64Strings                 `json:"base64"`
 }
 
 type Base64Strings struct {

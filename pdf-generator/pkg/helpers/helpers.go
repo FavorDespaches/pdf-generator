@@ -1,8 +1,11 @@
 package helpers
 
 import (
+	"bytes"
 	"encoding/base64"
 	"fmt"
+	"image"
+	"image/png"
 	"log"
 	"os"
 	"path/filepath"
@@ -11,6 +14,10 @@ import (
 
 	"github.com/FavorDespaches/pdf-generator/pkg/types"
 	"github.com/jung-kurt/gofpdf"
+
+	"github.com/boombuler/barcode"
+	"github.com/boombuler/barcode/code128"
+	"github.com/boombuler/barcode/datamatrix"
 )
 
 const (
@@ -18,6 +25,7 @@ const (
 	pageHeight                = 297.0 // A4 height in mm
 	labelWidth                = 210.0 / 2
 	labelHeight               = 297.0 / 2
+	DPI                       = 300
 	paddingRight              = 12.0
 	logoWidth                 = 25.0
 	logoHeight                = 25.0
@@ -37,29 +45,6 @@ const (
 	SEDEX_HOJE_FILEPATH       = "sedex-hoje.png"
 	MINI_ENVIOS_FILEPATH      = "mini-envios.png"
 )
-
-// ! ===== DIVISOR DO PAPEL A4 EM 4 PARTES IDÊNTICAS =====
-func DrawDottedLines(pdf *gofpdf.Fpdf) {
-	midX := pageWidth / 2
-	midY := pageHeight / 2
-
-	pdf.SetDrawColor(0, 0, 0)
-	pdf.SetDashPattern([]float64{3, 2}, 0)
-
-	//! LINHA PONTILHADA VERTICAL
-	DrawDottedLine(pdf, midX, 0, midX, pageHeight)
-
-	//! LINHA PONTILHADA HORIZONTAL
-	DrawDottedLine(pdf, 0, midY, pageWidth, midY)
-
-	pdf.SetDashPattern([]float64{}, 0)
-}
-
-func DrawDottedLine(pdf *gofpdf.Fpdf, x1, y1, x2, y2 float64) {
-	pdf.MoveTo(x1, y1)
-	pdf.LineTo(x2, y2)
-	pdf.DrawPath("D")
-}
 
 func addImage(pdf *gofpdf.Fpdf, imagePath string, x, y, width, height float64, keepAspectRatio bool) {
 	// Extract the file extension
@@ -138,13 +123,11 @@ func findTipoServicoImagemByCodServicoPostagem(codServicoPostagem string) string
 }
 
 // ! ===== PRIMEIRA LINHA DA ETIQUETA =====
-func DrawFirstRow(pdf *gofpdf.Fpdf, x, y float64, idPlp int, tipoServicoImagem string, dataMatrixBase64String string, local bool) float64 {
+func DrawFirstRow(pdf *gofpdf.Fpdf, x, y float64, idPrePostagem string, tipoServicoImagem string, dataMatrixBase64String string, local bool) float64 {
 	spaceBetween := 12.0 // Space between elements
 
 	// Calculate positions based on the dimensions and space between elements
 	tipoServicoX := x
-	dataMatrixX := tipoServicoX + tipoServicoSize + spaceBetween
-	brandingX := dataMatrixX + dataMatrixSize + spaceBetween
 
 	//! TIPO SERVIÇO LOGO
 	var tipoServicoImagemPath string
@@ -160,67 +143,14 @@ func DrawFirstRow(pdf *gofpdf.Fpdf, x, y float64, idPlp int, tipoServicoImagem s
 		keepAspectRatio = true
 		ratio = 1.0
 	}
-
 	addImage(pdf, tipoServicoImagemPath, tipoServicoX, y, ratio*tipoServicoSize, tipoServicoSize, keepAspectRatio)
 
 	idPlpX := tipoServicoX - 0.7
 	idPLpY := y + tipoServicoSize + 0.25
-	idPlpText := fmt.Sprintf("PLP: %v", idPlp)
+	// idPlpText := fmt.Sprintf("ID: %s", idPrePostagem)
 	pdf.SetXY(idPlpX, idPLpY)
 	pdf.SetFont("Arial", "", 8)
-	pdf.CellFormat(tipoServicoSize, 8, idPlpText, "", 0, "LM", false, 0, "")
-
-	//! DATA MATRIX
-	// errDataMatrix := generateDataMatrix(pdf, dataMatrixBase64String, dataMatrixX, y, dataMatrixSize, dataMatrixSize)
-	errDataMatrix := addBase64ImageToPDF(pdf, dataMatrixBase64String, dataMatrixX, y, dataMatrixSize, dataMatrixSize)
-	if errDataMatrix != nil {
-		errDataMatrixString := fmt.Sprintf("Erro generateDataMatrix %s", errDataMatrix.Error())
-		panic(errDataMatrixString)
-	}
-
-	//! LOGO FAVOR
-	var favorLogoImagePath string
-	if local {
-		favorLogoImagePath = filepath.Join("../../layers/images", "favor-logo.png")
-	} else {
-		favorLogoImagePath = filepath.Join("/opt", "bin", "images", "favor-logo.png")
-	}
-	addImage(pdf, favorLogoImagePath, brandingX, y, logoWidth, logoHeight, false)
-
-	nextY := y + dataMatrixSize
-
-	return nextY
-}
-
-// ! ===== PRIMEIRA LINHA DA ETIQUETA =====
-func DrawSmallFirstRow(pdf *gofpdf.Fpdf, x, y float64, idPrePostagem string, tipoServicoImagem string, dataMatrixBase64String string, local bool) float64 {
-	spaceBetween := 12.0 // Space between elements
-
-	// Calculate positions based on the dimensions and space between elements
-	tipoServicoX := x
-
-	//! TIPO SERVIÇO LOGO
-	var tipoServicoImagemPath string
-	if local {
-		tipoServicoImagemPath = filepath.Join("../../layers/images", tipoServicoImagem)
-	} else {
-		tipoServicoImagemPath = filepath.Join("/opt", "bin", "images", tipoServicoImagem)
-	}
-
-	keepAspectRatio := false
-	ratio := 1.4
-	if tipoServicoImagem == MINI_ENVIOS_FILEPATH {
-		keepAspectRatio = true
-		ratio = 1.0
-	}
-	addImage(pdf, tipoServicoImagemPath, tipoServicoX, y, ratio*tipoServicoSize, tipoServicoSize, keepAspectRatio)
-
-	//idPlpX := tipoServicoX - 0.7
-	//idPLpY := y + tipoServicoSize + 0.25
-	//idPlpText := fmt.Sprintf("ID: %s", idPrePostagem)
-	//pdf.SetXY(idPlpX, idPLpY)
-	//pdf.SetFont("Arial", "", 8)
-	//pdf.CellFormat(tipoServicoSize, 8, idPlpText, "", 0, "LM", false, 0, "")
+	pdf.CellFormat(tipoServicoSize, 8, "suporte:", "", 0, "LM", false, 0, "")
 
 	//! DATA MATRIX
 	// errDataMatrix := generateDataMatrix(pdf, dataMatrixBase64String, dataMatrixX, y, dataMatrixSize, dataMatrixSize)
@@ -246,55 +176,22 @@ func DrawSmallFirstRow(pdf *gofpdf.Fpdf, x, y float64, idPrePostagem string, tip
 	return nextY
 }
 
-func DrawSmallDelimiter(pdf *gofpdf.Fpdf, x, y float64) {
-	pdf.SetDrawColor(0, 0, 0)
-	//! LINHA HORIZONTAL
-	DrawDottedLine(pdf, x+3.5, y+4.75, x+3.5+98, y+4.75)
-	DrawDottedLine(pdf, x+3.5+98, y+4.75, x+3.5+98, y+4.75+139)
-	DrawDottedLine(pdf, x+3.5+98, y+4.75+139, x+3.5, y+4.75+139)
-	DrawDottedLine(pdf, x+3.5, y+4.75+139, x+3.5, y+4.75)
-}
-
 //-----------------------------------------------------------------
 
-func DrawSecondRow(pdf *gofpdf.Fpdf, x, y float64, peso float64) float64 {
+func DrawSecondRow(pdf *gofpdf.Fpdf, x, y float64, idPrePostagem string, peso float64) float64 {
 	spaceBetween := 12.0
 	lineHeight := 6.0
 
 	pedidoTextX := x - 0.7
+	// pedidoText := fmt.Sprintf("Id: %s", idPrePostagem)
 	pdf.SetXY(pedidoTextX, y)
 	pdf.SetFont("Arial", "", 8)
-	pdf.CellFormat(tipoServicoSize, lineHeight, "Pedido: 0", "", 0, "L", false, 0, "")
-
-	nfTextX := x + tipoServicoSize + spaceBetween - 0.7
-	pdf.SetXY(nfTextX, y)
-	pdf.SetFont("Arial", "", 8)
-	pdf.CellFormat(tipoServicoSize, lineHeight, "NF: 0", "", 0, "L", false, 0, "")
-
-	pesoTextX := nfTextX + dataMatrixSize + spaceBetween - 0.7
-	pesoText := fmt.Sprintf("Peso (g): %v", peso)
-	pdf.SetXY(pesoTextX, y)
-	pdf.SetFont("Arial", "", 8)
-	pdf.CellFormat(tipoServicoSize, lineHeight, pesoText, "", 0, "L", false, 0, "")
-
-	nextY := y + 4
-	return nextY
-}
-
-func DrawSmallSecondRow(pdf *gofpdf.Fpdf, x, y float64, idPrePostagem string, peso float64) float64 {
-	spaceBetween := 12.0
-	lineHeight := 6.0
-
-	pedidoTextX := x - 0.7
-	pedidoText := fmt.Sprintf("Id: %s", idPrePostagem)
-	pdf.SetXY(pedidoTextX, y)
-	pdf.SetFont("Arial", "", 8)
-	pdf.CellFormat(tipoServicoSize, lineHeight, pedidoText, "", 0, "L", false, 0, "")
+	pdf.CellFormat(tipoServicoSize, lineHeight, "favordespaches.com.br/suporte", "", 0, "L", false, 0, "")
 
 	nfTextX := x + tipoServicoSize + 1.3*spaceBetween - 0.7
-	// pdf.SetXY(nfTextX, y)
-	// pdf.SetFont("Arial", "", 8)
-	// pdf.CellFormat(tipoServicoSize, lineHeight, "NF: 0", "", 0, "L", false, 0, "")
+	pdf.SetXY(nfTextX, y)
+	pdf.SetFont("Arial", "", 8)
+	// pdf.CellFormat(tipoServicoSize, lineHeight, "favordespaches.com.br/suporte", "", 0, "L", false, 0, "")
 
 	pesoTextX := nfTextX + dataMatrixSize + 0.7*spaceBetween - 0.7
 	pesoText := fmt.Sprintf("Peso (g): %v", peso)
@@ -306,9 +203,59 @@ func DrawSmallSecondRow(pdf *gofpdf.Fpdf, x, y float64, idPrePostagem string, pe
 	return nextY
 }
 
-//-----------------------------------------------------------------
+// -----------------------------------------------------------------
+func mmToPixels(mm int, dpi int) int {
+	return int(float64(mm*dpi)/25.4 + 0.5) // Adding 0.5 for rounding to nearest integer
+}
+
+func ConvertImage(img image.Image) *image.RGBA {
+	b := img.Bounds()
+	newImg := image.NewRGBA(image.Rect(0, 0, b.Dx(), b.Dy()))
+	for y := b.Min.Y; y < b.Max.Y; y++ {
+		for x := b.Min.X; x < b.Max.X; x++ {
+			newImg.Set(x, y, img.At(x, y))
+		}
+	}
+	return newImg
+}
 
 // ! ===== CÓDIGO DE RASTREIO =====
+func CreateBarcodeBaseString(width, height int, code string) string {
+	baseCode, err := code128.Encode(code)
+	if err != nil {
+		log.Fatalf("code128.Encode(code): %v", err)
+	}
+
+	scaledCode, err := barcode.Scale(baseCode, mmToPixels(width, DPI), mmToPixels(height, DPI))
+	if err != nil {
+		log.Fatalf("barcode.Scale(): %v", err)
+	}
+
+	//fmt.Printf("%s", scaledCode.Metadata())
+	var buf bytes.Buffer
+	err = png.Encode(&buf, ConvertImage(scaledCode))
+	if err != nil {
+		log.Fatalf("png.Encode(&buf, ConvertImage(scaledCode)): %v", err)
+	}
+
+	// fmt.Printf("Encode: %s", buf.Bytes())
+
+	return base64.StdEncoding.EncodeToString(buf.Bytes())
+}
+
+func CreateDatamatrixBaseString(code string) string {
+	baseCode, _ := datamatrix.Encode(code)
+	scaledCode, _ := barcode.Scale(baseCode, mmToPixels(25, DPI), mmToPixels(25, DPI))
+
+	var buf bytes.Buffer
+	err := png.Encode(&buf, ConvertImage(scaledCode))
+	if err != nil {
+		log.Fatalf("Failed to encode barcode as PNG: %v", err)
+	}
+
+	return base64.StdEncoding.EncodeToString(buf.Bytes())
+}
+
 func DrawTrackingCode(pdf *gofpdf.Fpdf, x, y float64, trackingCode string) float64 {
 	pdf.SetFont("Arial", "B", 12)
 
@@ -342,49 +289,6 @@ func DrawBarcode(pdf *gofpdf.Fpdf, x, y float64, barcodeBase64String string) flo
 
 // ! ========== ASSINATURAS ==========
 func DrawRecebedorAssinaturaDocumentoLines(pdf *gofpdf.Fpdf, x, y float64) float64 {
-	const RECEBEDOR = "Recebedor: "
-	const ASSINATURA = "Assinatura: "
-	const DOCUMENTO = "Documento: "
-
-	pdf.SetFont("Arial", "", 10)
-
-	lineHeight := 6.0
-
-	//! RECEBEDOR
-	recebedorX := x
-	recebedorY := y + lineHeight
-
-	recebedorLineXStart := recebedorX + pdf.GetStringWidth(RECEBEDOR)
-	recebedorLineXEnd := x + labelWidth - 10
-
-	pdf.Text(recebedorX, recebedorY, RECEBEDOR)
-	pdf.Line(recebedorLineXStart, recebedorY, recebedorLineXEnd, recebedorY)
-
-	//! ASSINATURA
-	assinaturaX := x
-	assinaturaY := recebedorY + lineHeight
-
-	assinaturaLineXStart := assinaturaX + pdf.GetStringWidth(ASSINATURA)
-	assinaturaLineXEnd := x + labelWidth/2
-
-	pdf.Text(assinaturaX, assinaturaY, ASSINATURA)
-	pdf.Line(assinaturaLineXStart, assinaturaY, assinaturaLineXEnd, assinaturaY)
-
-	//! DOCUMENTO
-	documentoX := assinaturaLineXEnd + 1
-	documentoY := assinaturaY
-
-	documentoLineXStart := documentoX + pdf.GetStringWidth(DOCUMENTO)
-	documentoLineXEnd := x + labelWidth - 10
-	pdf.Text(documentoX, documentoY, DOCUMENTO)
-	pdf.Line(documentoLineXStart, documentoY, documentoLineXEnd, documentoY)
-
-	nextY := documentoY + 4
-
-	return nextY
-}
-
-func DrawSmallRecebedorAssinaturaDocumentoLines(pdf *gofpdf.Fpdf, x, y float64) float64 {
 	const RECEBEDOR = "Recebedor: "
 	const ASSINATURA = "Assinatura: "
 	const DOCUMENTO = "Documento: "
@@ -432,45 +336,6 @@ func DrawSmallRecebedorAssinaturaDocumentoLines(pdf *gofpdf.Fpdf, x, y float64) 
 
 // ! ========== DIVISOR DESTINATÁRIO ==========
 func DrawDestinatarioCorreiosLogoDivisor(pdf *gofpdf.Fpdf, x, y float64, local bool) float64 {
-	translator := pdf.UnicodeTranslatorFromDescriptor("")
-	const DESTINATARIO = "DESTINATÁRIO   "
-	destinatarioTextWidth := pdf.GetStringWidth(DESTINATARIO) + 10
-	lineHeight := 8.0
-	fontSize := 12.0
-
-	pdf.SetFont("Arial", "B", fontSize)
-
-	pdf.SetLineWidth(0.5)
-	pdf.Line(x, y, x+labelWidth, y)
-	pdf.SetLineWidth(defaultLineWidth)
-
-	//! DESENHA O RETANGULO COM FUNDO PRETO
-	pdf.SetFillColor(0, 0, 0)
-	pdf.Rect(x, y, destinatarioTextWidth, lineHeight, "F")
-
-	destinatarioTextX := x + 1
-	destinatarioTextY := y + (lineHeight / 2) + (pdf.PointConvert(fontSize) / 2) - 0.5
-	pdf.SetTextColor(255, 255, 255)
-	pdf.Text(destinatarioTextX, destinatarioTextY, translator(DESTINATARIO))
-	pdf.SetTextColor(0, 0, 0)
-
-	//!TODO: Adicionar o logo dos correios
-	widthHeightRatio := 4781.0 / 958.0
-	imageWidth := 20.0
-	imageHeight := imageWidth / widthHeightRatio
-
-	var correiosLogoImagePath string
-	if local {
-		correiosLogoImagePath = filepath.Join("../../layers/images", "correios-logo.png")
-	} else {
-		correiosLogoImagePath = filepath.Join("/opt", "bin", "images", "correios-logo.png")
-	}
-	addImage(pdf, correiosLogoImagePath, x+labelWidth-22, y+1, imageWidth, imageHeight, false)
-
-	return y + 8.0
-}
-
-func DrawSmallDestinatarioCorreiosLogoDivisor(pdf *gofpdf.Fpdf, x, y float64, local bool) float64 {
 	translator := pdf.UnicodeTranslatorFromDescriptor("")
 	const DESTINATARIO = "DESTINATÁRIO:"
 	// destinatarioTextWidth := pdf.GetStringWidth(DESTINATARIO) + 10
@@ -681,19 +546,6 @@ func DrawObservacoes(pdf *gofpdf.Fpdf, x, y float64, servicoAdicional *types.Ser
 
 // ! ========== SEPARADOR REMETENTE ==========
 func DrawSeparadorRemetente(pdf *gofpdf.Fpdf, x, y float64) float64 {
-	paddingTop := 6.0
-	paddingBottom := 4.0
-
-	pdf.SetLineWidth(0.5)
-	pdf.Line(x, y+paddingTop, x+labelWidth, y+paddingTop)
-	pdf.SetLineWidth(defaultLineWidth)
-
-	nextY := paddingTop + y + paddingBottom
-	return nextY
-}
-
-// ! ========== SEPARADOR REMETENTE ==========
-func DrawSmallSeparadorRemetente(pdf *gofpdf.Fpdf, x, y float64) float64 {
 	paddingTop := 2.0
 	paddingBottom := 4.0
 

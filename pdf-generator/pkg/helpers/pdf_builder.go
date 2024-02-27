@@ -42,7 +42,7 @@ func GenerateLabelsPDFLocal(solicitarEtiquetasPDF types.SolicitarEtiquetasPDF) e
 		for i, objetoPostal := range objetoPostalChunk {
 			fmt.Println("     - Desenhando a etiqueta ", i)
 			startPoint := subdivisionStartPoints[i]
-			DrawSmallLabel(pdf, startPoint.x, startPoint.y, labelWidth, labelHeight, i, remetente, objetoPostal, true)
+			DrawLabel(pdf, startPoint.x, startPoint.y, labelWidth, labelHeight, i, remetente, objetoPostal, true)
 		}
 	}
 
@@ -71,7 +71,7 @@ func GenerateLabelsPDF(solicitarEtiquetasPDF types.SolicitarEtiquetasPDF) (strin
 		for i, objetoPostal := range objetoPostalChunk {
 			fmt.Println("     - Desenhando a etiqueta ", i+1)
 			startPoint := subdivisionStartPoints[i]
-			DrawSmallLabel(pdf, startPoint.x, startPoint.y, labelWidth, labelHeight, i, remetente, objetoPostal, false)
+			DrawLabel(pdf, startPoint.x, startPoint.y, labelWidth, labelHeight, i, remetente, objetoPostal, false)
 		}
 	}
 
@@ -88,7 +88,7 @@ func GenerateLabelsPDF(solicitarEtiquetasPDF types.SolicitarEtiquetasPDF) (strin
 	return base64Str, nil
 }
 
-func DrawSmallLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, index int, remetente types.SolicitarEtiquetaRemetente, objetoPostal types.SolicitarEtiquetasPDFObjetoPostal, local bool) {
+func DrawLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, index int, remetente types.SolicitarEtiquetaRemetente, objetoPostal types.SolicitarEtiquetasPDFObjetoPostal, local bool) {
 	pesoObjeto := objetoPostal.Peso
 	codRastreio := FormatTrackingCode(objetoPostal.CodigoRastreio)
 	codServicoPostagem := objetoPostal.CodigoServicoPostagem
@@ -98,27 +98,25 @@ func DrawSmallLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, index int, re
 	fmt.Println("        * Tipo serviço postagem: ", tipoServicoImagem)
 	fmt.Println()
 
-	dataMatrixBase64String := objetoPostal.Base64.Datamatrix
-	barcodeBase64String := objetoPostal.Base64.Code
-	destinatarioBarcodeBase64String := objetoPostal.Base64.CepBarcode
-
+	dataMatrixBase64String := CreateDatamatrixBaseString(objetoPostal.DatamatrixString)
+	barcodeBase64String := CreateBarcodeBaseString(80, 18, objetoPostal.CodigoRastreio)
+	destinatarioBarcodeBase64String := CreateBarcodeBaseString(40, 18, objetoPostal.Destinatario.CepDestinatario)
 	paddingTop := 3.5 + 4.75
 	paddingLeft := 6.0 + 3.5
 	var nextY = y + paddingTop
 
-	//DrawSmallDelimiter(pdf, x, y)
 	//! LOGO FAVOR, DATAMATRIX, TIPO SERVIÇO LOGO E numero PLP
-	nextY = DrawSmallFirstRow(pdf, x+paddingLeft, nextY, idPrePostagem, tipoServicoImagem, dataMatrixBase64String, local)
+	nextY = DrawFirstRow(pdf, x+paddingLeft, nextY, idPrePostagem, tipoServicoImagem, dataMatrixBase64String, local)
 	//! PEDIDO, NF E PESO
-	nextY = DrawSmallSecondRow(pdf, x+paddingLeft, nextY, idPrePostagem, pesoObjeto)
+	nextY = DrawSecondRow(pdf, x+paddingLeft, nextY, idPrePostagem, pesoObjeto)
 	//! CÓDIGO DE RASTREIO
 	nextY = DrawTrackingCode(pdf, x, nextY, codRastreio)
 	//! BARRA DE CÓDIGO
 	nextY = DrawBarcode(pdf, x, nextY, barcodeBase64String)
 	//! RECEBEDOR, ASSINATURA e DOCUMENTO
-	nextY = DrawSmallRecebedorAssinaturaDocumentoLines(pdf, x+paddingLeft, nextY)
+	nextY = DrawRecebedorAssinaturaDocumentoLines(pdf, x+paddingLeft, nextY)
 	//! SEPARADOR DESTINATÁRIO E LOGO CORREIOS
-	nextY = DrawSmallDestinatarioCorreiosLogoDivisor(pdf, x+paddingLeft, nextY, local)
+	nextY = DrawDestinatarioCorreiosLogoDivisor(pdf, x+paddingLeft, nextY, local)
 	//! DADOS DESTINATÁRIO
 	paddingDestinatario := 3.0
 	nextY = DrawDadosDestinatario(pdf, x+paddingLeft+paddingDestinatario, nextY, objetoPostal.Destinatario)
@@ -127,7 +125,7 @@ func DrawSmallLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, index int, re
 	nextY = DrawDestinatarioBarCode(pdf, x+paddingLeft+paddingDestinatario, nextY, destinatarioBarcodeBase64String)
 	//fmt.Printf("nextY DrawSmallSeparadorRemetente %f\n", nextY)
 	//! SEPARADOR REMETENTE
-	nextY = DrawSmallSeparadorRemetente(pdf, x+paddingLeft, nextY)
+	nextY = DrawSeparadorRemetente(pdf, x+paddingLeft, nextY)
 	//! DADOS REMETENTE
 	DrawDadosRemetente(pdf, x+paddingLeft, nextY, remetente)
 }

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/FavorDespaches/pdf-generator/pkg/codes"
 	"github.com/FavorDespaches/pdf-generator/pkg/helpers"
 	"github.com/FavorDespaches/pdf-generator/pkg/types"
 )
@@ -47,15 +46,9 @@ func main() {
 				ServicoAdicional: &types.ServicoAdicional{
 					CodigoServicoAdicional: []string{"001", "002"},
 					ValorDeclarado:         1000.00,
-					EnderecoVizinho:        "Rua do Vizinho, 123",
-					SiglaServicoAdicional:  []string{"SA01", "SA02"},
 				},
-				Peso: 500,
-				Base64: types.Base64Strings{
-					Datamatrix: codes.GetDatamatrix(),
-					Code:       codes.GetCode(),
-					CepBarcode: codes.GetCepBarcode(),
-				},
+				Peso:             500,
+				DatamatrixString: "13560520000371228222000037851AA123456789BB2501190000000123456789032980100037Residencial Eden 300050000000000000-00.000000-00.000000|",
 			},
 		},
 	}
@@ -68,8 +61,4 @@ func main() {
 
 func ptrToString(s string) *string {
 	return &s
-}
-
-func ptrToInt64(i int64) *int64 {
-	return &i
 }
