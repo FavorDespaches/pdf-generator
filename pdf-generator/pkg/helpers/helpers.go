@@ -23,8 +23,8 @@ import (
 const (
 	pageWidth                 = 210.0 // A4 width in mm
 	pageHeight                = 297.0 // A4 height in mm
-	labelWidth                = 210.0 / 2
-	labelHeight               = 297.0 / 2
+	labelWidth                = 98
+	labelHeight               = 138
 	DPI                       = 300
 	paddingRight              = 12.0
 	logoWidth                 = 25.0
@@ -45,6 +45,27 @@ const (
 	SEDEX_HOJE_FILEPATH       = "sedex-hoje.png"
 	MINI_ENVIOS_FILEPATH      = "mini-envios.png"
 )
+
+func DrawDelimiter(pdf *gofpdf.Fpdf, x, y float64) {
+	labelTopY := y + 8
+	labelBottomY := labelTopY + labelHeight
+	labelLeftX := x + 5
+	labelRightX := labelLeftX + labelWidth
+
+	if x == pageWidth/2 {
+		labelLeftX = x + 2.5
+		labelRightX = labelLeftX + labelWidth
+	}
+	if y == pageHeight/2 {
+		labelTopY = y + 2
+		labelBottomY = labelTopY + labelHeight
+	}
+
+	pdf.Line(labelLeftX, labelTopY, labelRightX, labelTopY)
+	pdf.Line(labelRightX, labelTopY, labelRightX, labelBottomY)
+	pdf.Line(labelRightX, labelBottomY, labelLeftX, labelBottomY)
+	pdf.Line(labelLeftX, labelBottomY, labelLeftX, labelTopY)
+}
 
 func addImage(pdf *gofpdf.Fpdf, imagePath string, x, y, width, height float64, keepAspectRatio bool) {
 	// Extract the file extension
@@ -117,6 +138,7 @@ func findTipoServicoImagemByCodServicoPostagem(codServicoPostagem string) string
 	case "03204", "3204":
 		tipoServicoImagem = SEDEX_HOJE_FILEPATH
 	default:
+		log.Fatalf("CÓDIGO %s NÃO IMPLEMENTADO", codServicoPostagem)
 		panic("Código não implementado!")
 	}
 	return tipoServicoImagem
@@ -158,6 +180,7 @@ func DrawFirstRow(pdf *gofpdf.Fpdf, x, y float64, idPrePostagem string, tipoServ
 	errDataMatrix := addBase64ImageToPDF(pdf, dataMatrixBase64String, dataMatrixX, y, dataMatrixSize, dataMatrixSize)
 	if errDataMatrix != nil {
 		errDataMatrixString := fmt.Sprintf("Erro generateDataMatrix %s", errDataMatrix.Error())
+		log.Fatalf(errDataMatrixString)
 		panic(errDataMatrixString)
 	}
 
@@ -263,7 +286,7 @@ func DrawTrackingCode(pdf *gofpdf.Fpdf, x, y float64, trackingCode string) float
 	var startX = (labelWidth / 2) - (textWidth / 2)
 
 	if x != 0.0 {
-		startX += labelWidth
+		startX += labelWidth + 6.5
 	}
 
 	pdf.SetXY(startX, y)
@@ -280,6 +303,7 @@ func DrawBarcode(pdf *gofpdf.Fpdf, x, y float64, barcodeBase64String string) flo
 
 	if errBarcode != nil {
 		errBarcodeString := fmt.Sprintf("Erro DrawBarcode addBase64ImageToPDF %s", errBarcode.Error())
+		log.Fatalf(errBarcodeString)
 		panic(errBarcodeString)
 	}
 
@@ -348,8 +372,8 @@ func DrawDestinatarioCorreiosLogoDivisor(pdf *gofpdf.Fpdf, x, y float64, local b
 
 	//pdf.SetLineWidth(0.3)
 	pdf.Line(x, y, x, y+dadosDestinatarioHeight)
-	pdf.Line(x, y, x+labelWidth-paddingRight, y)
-	pdf.Line(x+labelWidth-paddingRight, y, x+labelWidth-paddingRight, y+dadosDestinatarioHeight)
+	pdf.Line(x, y, x+labelWidth-paddingRight+1, y)
+	pdf.Line(x+labelWidth-paddingRight+1, y, x+labelWidth-paddingRight+1, y+dadosDestinatarioHeight)
 	//pdf.SetLineWidth(defaultLineWidth)
 
 	//! DESENHA O RETANGULO COM FUNDO PRETO
@@ -429,6 +453,7 @@ func buildCepDestinatarioString(destinatario types.SolicitarEtiquetaDestinatario
 			formattedCEP += "0"
 			formattedCEP += destinatario.CepDestinatario
 		} else {
+			log.Fatalf("CEP INVÁLIDO")
 			panic("CEP INVÁLIDO")
 		}
 	} else {
@@ -494,6 +519,7 @@ func DrawDestinatarioBarCode(pdf *gofpdf.Fpdf, x, y float64, destinatarioBarcode
 
 	if errDestinatarioBarCode != nil {
 		errDestinatarioBarCodeString := fmt.Sprintf("Erro DrawDestinatarioBarCode generateBarcode128 %s", errDestinatarioBarCode.Error())
+		log.Fatalf(errDestinatarioBarCodeString)
 		panic(errDestinatarioBarCodeString)
 	}
 
@@ -531,7 +557,7 @@ func DrawObservacoes(pdf *gofpdf.Fpdf, x, y float64, servicoAdicional *types.Ser
 	}
 
 	if len(observacoes) > 0 {
-		observacoesX := x + 1.4*destinatarioBarCodeWidth
+		observacoesX := x + 1.3*destinatarioBarCodeWidth + 1.0
 		currentY := y + 2.0
 		pdf.Text(observacoesX, currentY, translator("Obs.:"))
 		servicoasAdicionaisX := observacoesX + pdf.GetStringWidth("Obs.:") + 0.5
@@ -550,7 +576,7 @@ func DrawSeparadorRemetente(pdf *gofpdf.Fpdf, x, y float64) float64 {
 	paddingBottom := 4.0
 
 	//pdf.SetLineWidth(0.5)
-	pdf.Line(x, y+paddingTop, x+labelWidth-paddingRight, y+paddingTop)
+	pdf.Line(x, y+paddingTop, x+labelWidth-paddingRight+1, y+paddingTop)
 	//pdf.SetLineWidth(defaultLineWidth)
 
 	nextY := paddingTop + y + paddingBottom
@@ -608,6 +634,7 @@ func buildCepRemetenteString(remetente types.SolicitarEtiquetaRemetente) string 
 			formattedCEP += "0"
 			formattedCEP += remetente.CepRemetente
 		} else {
+			log.Fatalf("CEP INVÁLIDO")
 			panic("CEP INVÁLIDO")
 		}
 	} else {

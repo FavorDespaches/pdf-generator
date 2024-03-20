@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
+	"log"
 
 	"github.com/FavorDespaches/pdf-generator/pkg/types"
 	"github.com/jung-kurt/gofpdf"
@@ -59,7 +60,6 @@ func GenerateLabelsPDF(solicitarEtiquetasPDF types.SolicitarEtiquetasPDF) (strin
 	for k, objetoPostalChunk := range chunkifiedObjetoPostal {
 		fmt.Println("   - Desenhando a página ", k+1)
 		pdf.AddPage()
-		//DrawDottedLines(pdf)
 
 		subdivisionStartPoints := []struct{ x, y float64 }{
 			{0, 0},
@@ -79,12 +79,11 @@ func GenerateLabelsPDF(solicitarEtiquetasPDF types.SolicitarEtiquetasPDF) (strin
 
 	err := pdf.Output(&buffer)
 	if err != nil {
+		log.Fatalf("ERRO AO TRANSFORMAR PDF EM BASE64STRING")
 		panic(err)
 	}
 
 	base64Str := base64.StdEncoding.EncodeToString(buffer.Bytes())
-	fmt.Println("base64 string")
-	fmt.Println(base64Str)
 	return base64Str, nil
 }
 
@@ -95,13 +94,17 @@ func DrawLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, index int, remeten
 	tipoServicoImagem := findTipoServicoImagemByCodServicoPostagem(codServicoPostagem)
 	idPrePostagem := objetoPostal.IdPrePostagem
 
+	fmt.Printf("        * x: %.2f\n", x)
+	fmt.Printf("        * y: %.2f\n", y)
 	fmt.Println("        * Tipo serviço postagem: ", tipoServicoImagem)
-	fmt.Println()
 
 	dataMatrixBase64String := CreateDatamatrixBaseString(objetoPostal.DatamatrixString)
 	barcodeBase64String := CreateBarcodeBaseString(80, 18, objetoPostal.CodigoRastreio)
 	destinatarioBarcodeBase64String := CreateBarcodeBaseString(40, 18, objetoPostal.Destinatario.CepDestinatario)
-	paddingTop := 3.5 + 4.75
+	paddingTop := 14.0
+	if y == pageHeight/2 {
+		paddingTop = 8.0
+	}
 	paddingLeft := 6.0 + 3.5
 	var nextY = y + paddingTop
 
