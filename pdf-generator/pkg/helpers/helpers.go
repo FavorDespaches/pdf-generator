@@ -217,7 +217,7 @@ func DrawSecondRow(pdf *gofpdf.Fpdf, x, y float64, idPrePostagem string, peso fl
 	// pdf.CellFormat(tipoServicoSize, lineHeight, "favordespaches.com.br/suporte", "", 0, "L", false, 0, "")
 
 	pesoTextX := nfTextX + dataMatrixSize + 0.7*spaceBetween - 0.7
-	pesoText := fmt.Sprintf("Peso (g): %v", peso)
+	pesoText := fmt.Sprintf("Peso (g): %.0f", peso)
 	pdf.SetXY(pesoTextX, y)
 	pdf.SetFont("Arial", "", 8)
 	pdf.CellFormat(tipoServicoSize, lineHeight, pesoText, "", 0, "L", false, 0, "")

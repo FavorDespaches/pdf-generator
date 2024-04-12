@@ -139,7 +139,7 @@ func main() {
 					CodigoServicoAdicional: []string{"001", "002"},
 					ValorDeclarado:         1000.00,
 				},
-				Peso:             500,
+				Peso:             500.00000002,
 				DatamatrixString: "13560520000371228222000037851AA123456789BB2501190000000123456789032980100037Residencial Eden 300050000000000000-00.000000-00.000000|",
 			},
 		},
