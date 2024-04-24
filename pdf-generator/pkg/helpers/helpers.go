@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/FavorDespaches/pdf-generator/pkg/types"
 	"github.com/jung-kurt/gofpdf"
@@ -25,6 +26,8 @@ const (
 	pageHeight                = 297.0 // A4 height in mm
 	labelWidth                = 98
 	labelHeight               = 138
+	cartaWidth                = 97.0
+	cartaHeight               = 36.0
 	DPI                       = 300
 	paddingRight              = 12.0
 	logoWidth                 = 25.0
@@ -44,6 +47,7 @@ const (
 	SEDEX_12_FILEPATH         = "sedex-12.png"
 	SEDEX_HOJE_FILEPATH       = "sedex-hoje.png"
 	MINI_ENVIOS_FILEPATH      = "mini-envios.png"
+	CARTA_SIMPLES_FILEPATH    = "carta-simples.png"
 )
 
 func DrawDelimiter(pdf *gofpdf.Fpdf, x, y float64) {
@@ -137,6 +141,8 @@ func findTipoServicoImagemByCodServicoPostagem(codServicoPostagem string) string
 		tipoServicoImagem = SEDEX_12_FILEPATH
 	case "03204", "3204":
 		tipoServicoImagem = SEDEX_HOJE_FILEPATH
+	case "80160":
+		tipoServicoImagem = CARTA_SIMPLES_FILEPATH
 	default:
 		log.Fatalf("CÓDIGO %s NÃO IMPLEMENTADO", codServicoPostagem)
 		panic("Código não implementado!")
@@ -266,9 +272,9 @@ func CreateBarcodeBaseString(width, height int, code string) string {
 	return base64.StdEncoding.EncodeToString(buf.Bytes())
 }
 
-func CreateDatamatrixBaseString(code string) string {
+func CreateDatamatrixBaseString(code string, w, h int) string {
 	baseCode, _ := datamatrix.Encode(code)
-	scaledCode, _ := barcode.Scale(baseCode, mmToPixels(25, DPI), mmToPixels(25, DPI))
+	scaledCode, _ := barcode.Scale(baseCode, mmToPixels(w, DPI), mmToPixels(h, DPI))
 
 	var buf bytes.Buffer
 	err := png.Encode(&buf, ConvertImage(scaledCode))
@@ -648,6 +654,56 @@ func buildCidadeUfRemetenteString(remetente types.SolicitarEtiquetaRemetente) st
 	return cidadeUfRemetenteString
 }
 
+func DrawChancelaCarta(pdf *gofpdf.Fpdf, x, y float64, tipoServicoImagem string, local bool) {
+	//! TIPO SERVIÇO LOGO
+	var tipoServicoImagemPath string
+	if local {
+		tipoServicoImagemPath = filepath.Join("../../layers/images", tipoServicoImagem)
+	} else {
+		tipoServicoImagemPath = filepath.Join("/opt", "bin", "images", tipoServicoImagem)
+	}
+
+	chancelaX := x
+	chancelaY := y
+	addImage(pdf, tipoServicoImagemPath, chancelaX, chancelaY, tipoServicoSize, tipoServicoSize, true)
+
+	textHeight := 2.5
+	textX := x - 1.0
+	textY := y + 20.5
+	pdf.SetXY(textX, textY)
+	pdf.SetFont("Arial", "", 7)
+	pdf.CellFormat(tipoServicoSize, textHeight, "Data de Postagem", "", 0, "L", false, 0, "")
+
+	dataText := getCurrentDateAsString()
+	dataTextX := x + pdf.GetStringWidth(dataText)/2 - 2.5
+	dataTextY := y + 20.5 + textHeight
+	pdf.SetXY(dataTextX, dataTextY)
+	pdf.SetFont("Arial", "", 7)
+	pdf.CellFormat(tipoServicoSize, textHeight, dataText, "", 0, "L", false, 0, "")
+}
+
+func DrawDataMatrixCarta(pdf *gofpdf.Fpdf, x, y float64, dataMatrixBase64String string, lote string) {
+	errDataMatrix := addBase64ImageToPDF(pdf, dataMatrixBase64String, x, y, 15, 15)
+	if errDataMatrix != nil {
+		errDataMatrixString := fmt.Sprintf("Erro generateDataMatrix %s", errDataMatrix.Error())
+		log.Fatalf(errDataMatrixString)
+		panic(errDataMatrixString)
+	}
+
+	loteTextHeight := 3.0
+	loteX := x
+	loteY := y + 14.5
+	pdf.SetXY(loteX, loteY)
+	pdf.SetFont("Arial", "B", 7)
+	pdf.CellFormat(tipoServicoSize, loteTextHeight, "ID:", "", 0, "L", false, 0, "")
+
+	loteTextX := x
+	loteTextY := y + 14.5 + loteTextHeight
+	pdf.SetXY(loteTextX, loteTextY)
+	pdf.SetFont("Arial", "", 6)
+	pdf.CellFormat(tipoServicoSize, loteTextHeight, lote, "", 0, "L", false, 0, "")
+}
+
 // ! ========== DADOS DO REMETENTE ==========
 func DrawDadosRemetente(pdf *gofpdf.Fpdf, x, y float64, remetente types.SolicitarEtiquetaRemetente) float64 {
 	translator := pdf.UnicodeTranslatorFromDescriptor("")
@@ -707,4 +763,9 @@ func FormatTrackingCode(code string) string {
 	}
 
 	return code[:2] + " " + code[2:5] + " " + code[5:8] + " " + code[8:11] + " " + code[11:]
+}
+
+func getCurrentDateAsString() string {
+	currentTime := time.Now()
+	return currentTime.Format("02/01/2006")
 }
