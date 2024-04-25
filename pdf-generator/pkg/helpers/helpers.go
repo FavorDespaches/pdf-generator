@@ -475,14 +475,28 @@ func buildCidadeUfDestinatarioString(destinatario types.SolicitarEtiquetaDestina
 }
 
 // ! ========== DADOS DO DESTINATÁRIO ==========
-func DrawDadosDestinatario(pdf *gofpdf.Fpdf, x, y float64, destinatario types.SolicitarEtiquetaDestinatario) float64 {
+func DrawDadosDestinatario(pdf *gofpdf.Fpdf, x, y float64, destinatario types.SolicitarEtiquetaDestinatario, isCarta bool) float64 {
 	translator := pdf.UnicodeTranslatorFromDescriptor("")
 	fontSize := 9.0
 	lineHeight := 4.0
-	pdf.SetFont("Arial", "", fontSize)
 
+	if isCarta {
+		fontSize = 8.0
+		lineHeight = 3.0
+
+		pdf.SetFont("Arial", "B", fontSize)
+		destinatarioX := x
+		destinatarioY := y
+		destinatarioText := translator("Destinatário:")
+		pdf.Text(destinatarioX, destinatarioY, destinatarioText)
+	}
+
+	pdf.SetFont("Arial", "", fontSize)
 	nomeDestinatarioX := x
 	nomeDestinatarioY := y
+	if isCarta {
+		nomeDestinatarioY = y + lineHeight
+	}
 	nomeDestinatarioText := translator(destinatario.NomeDestinatario)
 	pdf.Text(nomeDestinatarioX, nomeDestinatarioY, nomeDestinatarioText)
 
@@ -654,66 +668,19 @@ func buildCidadeUfRemetenteString(remetente types.SolicitarEtiquetaRemetente) st
 	return cidadeUfRemetenteString
 }
 
-func DrawChancelaCarta(pdf *gofpdf.Fpdf, x, y float64, tipoServicoImagem string, local bool) {
-	//! TIPO SERVIÇO LOGO
-	var tipoServicoImagemPath string
-	if local {
-		tipoServicoImagemPath = filepath.Join("../../layers/images", tipoServicoImagem)
-	} else {
-		tipoServicoImagemPath = filepath.Join("/opt", "bin", "images", tipoServicoImagem)
-	}
-
-	chancelaX := x
-	chancelaY := y
-	addImage(pdf, tipoServicoImagemPath, chancelaX, chancelaY, tipoServicoSize, tipoServicoSize, true)
-
-	textHeight := 2.5
-	textX := x - 1.0
-	textY := y + 20.5
-	pdf.SetXY(textX, textY)
-	pdf.SetFont("Arial", "", 7)
-	pdf.CellFormat(tipoServicoSize, textHeight, "Data de Postagem", "", 0, "L", false, 0, "")
-
-	dataText := getCurrentDateAsString()
-	dataTextX := x + pdf.GetStringWidth(dataText)/2 - 2.5
-	dataTextY := y + 20.5 + textHeight
-	pdf.SetXY(dataTextX, dataTextY)
-	pdf.SetFont("Arial", "", 7)
-	pdf.CellFormat(tipoServicoSize, textHeight, dataText, "", 0, "L", false, 0, "")
-}
-
-func DrawDataMatrixCarta(pdf *gofpdf.Fpdf, x, y float64, dataMatrixBase64String string, lote string) {
-	errDataMatrix := addBase64ImageToPDF(pdf, dataMatrixBase64String, x, y, 15, 15)
-	if errDataMatrix != nil {
-		errDataMatrixString := fmt.Sprintf("Erro generateDataMatrix %s", errDataMatrix.Error())
-		log.Fatalf(errDataMatrixString)
-		panic(errDataMatrixString)
-	}
-
-	loteTextHeight := 3.0
-	loteX := x
-	loteY := y + 14.5
-	pdf.SetXY(loteX, loteY)
-	pdf.SetFont("Arial", "B", 7)
-	pdf.CellFormat(tipoServicoSize, loteTextHeight, "ID:", "", 0, "L", false, 0, "")
-
-	loteTextX := x
-	loteTextY := y + 14.5 + loteTextHeight
-	pdf.SetXY(loteTextX, loteTextY)
-	pdf.SetFont("Arial", "", 6)
-	pdf.CellFormat(tipoServicoSize, loteTextHeight, lote, "", 0, "L", false, 0, "")
-}
-
 // ! ========== DADOS DO REMETENTE ==========
-func DrawDadosRemetente(pdf *gofpdf.Fpdf, x, y float64, remetente types.SolicitarEtiquetaRemetente) float64 {
+func DrawDadosRemetente(pdf *gofpdf.Fpdf, x, y float64, remetente types.SolicitarEtiquetaRemetente, isCarta bool) float64 {
 	translator := pdf.UnicodeTranslatorFromDescriptor("")
 	fontSize := 8.5
 	lineHeight := 3.5
-	pdf.SetFont("Arial", "", fontSize)
 
-	nomeRemetenteY := y
+	if isCarta {
+		fontSize = 7.5
+		lineHeight = 3.0
+	}
 
 	pdf.SetFont("Arial", "B", fontSize)
+	nomeRemetenteY := y
 	remetenteX := x
 	remetenteText := translator("Remetente: ")
 	pdf.Text(remetenteX, nomeRemetenteY, remetenteText)
@@ -754,6 +721,57 @@ func DrawDadosRemetente(pdf *gofpdf.Fpdf, x, y float64, remetente types.Solicita
 	nextY := cepCidadeUfRemetenteY + lineHeight
 
 	return nextY
+}
+
+func DrawChancelaCarta(pdf *gofpdf.Fpdf, x, y float64, tipoServicoImagem string, local bool) {
+	//! TIPO SERVIÇO LOGO
+	var tipoServicoImagemPath string
+	if local {
+		tipoServicoImagemPath = filepath.Join("../../layers/images", tipoServicoImagem)
+	} else {
+		tipoServicoImagemPath = filepath.Join("/opt", "bin", "images", tipoServicoImagem)
+	}
+
+	chancelaX := x
+	chancelaY := y
+	addImage(pdf, tipoServicoImagemPath, chancelaX, chancelaY, tipoServicoSize, tipoServicoSize, true)
+
+	textPaddingTop := 9.5
+	textHeight := 2.5
+	textX := x - 1.0
+	textY := y + 20.5 + textPaddingTop
+	pdf.SetXY(textX, textY)
+	pdf.SetFont("Arial", "", 7)
+	pdf.CellFormat(tipoServicoSize, textHeight, "Data de Postagem", "", 0, "L", false, 0, "")
+
+	dataText := getCurrentDateAsString()
+	dataTextX := x + pdf.GetStringWidth(dataText)/2 - 2.5
+	dataTextY := y + 20.5 + textHeight + textPaddingTop
+	pdf.SetXY(dataTextX, dataTextY)
+	pdf.SetFont("Arial", "", 7)
+	pdf.CellFormat(tipoServicoSize, textHeight, dataText, "", 0, "L", false, 0, "")
+}
+
+func DrawDataMatrixCarta(pdf *gofpdf.Fpdf, x, y float64, dataMatrixBase64String string, lote string) {
+	errDataMatrix := addBase64ImageToPDF(pdf, dataMatrixBase64String, x, y, 15, 15)
+	if errDataMatrix != nil {
+		errDataMatrixString := fmt.Sprintf("Erro generateDataMatrix %s", errDataMatrix.Error())
+		log.Fatalf(errDataMatrixString)
+		panic(errDataMatrixString)
+	}
+
+	loteTextHeight := 3.0
+	loteX := x
+	loteY := y + 16.5
+	pdf.SetXY(loteX, loteY)
+	pdf.SetFont("Arial", "B", 7)
+	pdf.CellFormat(tipoServicoSize, loteTextHeight, "ID:", "", 0, "L", false, 0, "")
+
+	loteTextX := x
+	loteTextY := y + 16.5 + loteTextHeight
+	pdf.SetXY(loteTextX, loteTextY)
+	pdf.SetFont("Arial", "", 6)
+	pdf.CellFormat(tipoServicoSize, loteTextHeight, lote, "", 0, "L", false, 0, "")
 }
 
 // ! ========== FORMATADOR DO CÓDIGO DE RASTREIO ==========

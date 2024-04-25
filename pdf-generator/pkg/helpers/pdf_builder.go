@@ -112,16 +112,16 @@ func GenerateLabelsPDFLocal(solicitarEtiquetasPDF types.SolicitarEtiquetasPDF) e
 		}
 	}
 
-	var buffer bytes.Buffer
-	err := pdf.Output(&buffer)
-	if err != nil {
-		errMsg := err.Error()
-		log.Fatalf("ERRO AO TRANSFORMAR PDF EM BASE64STRING: %s", errMsg)
-		panic(err)
-	}
+	// var buffer bytes.Buffer
+	// err := pdf.Output(&buffer)
+	// if err != nil {
+	// 	errMsg := err.Error()
+	// 	log.Fatalf("ERRO AO TRANSFORMAR PDF EM BASE64STRING: %s", errMsg)
+	// 	panic(err)
+	// }
 
-	base64Str := base64.StdEncoding.EncodeToString(buffer.Bytes())
-	fmt.Printf("%s", base64Str)
+	// base64Str := base64.StdEncoding.EncodeToString(buffer.Bytes())
+	// fmt.Printf("%s", base64Str)
 
 	return pdf.OutputFileAndClose("label.pdf")
 }
@@ -233,7 +233,7 @@ func DrawLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, index int, remeten
 	nextY = DrawDestinatarioCorreiosLogoDivisor(pdf, x+paddingLeft, nextY, local)
 	//! DADOS DESTINATÁRIO
 	paddingDestinatario := 3.0
-	nextY = DrawDadosDestinatario(pdf, x+paddingLeft+paddingDestinatario, nextY, objetoPostal.Destinatario)
+	nextY = DrawDadosDestinatario(pdf, x+paddingLeft+paddingDestinatario, nextY, objetoPostal.Destinatario, false)
 	//! BARRA DE CODIGO DESTINATARIO
 	DrawObservacoes(pdf, x, nextY, objetoPostal.ServicoAdicional)
 	nextY = DrawDestinatarioBarCode(pdf, x+paddingLeft+paddingDestinatario, nextY, destinatarioBarcodeBase64String)
@@ -241,7 +241,7 @@ func DrawLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, index int, remeten
 	//! SEPARADOR REMETENTE
 	nextY = DrawSeparadorRemetente(pdf, x+paddingLeft, nextY)
 	//! DADOS REMETENTE
-	DrawDadosRemetente(pdf, x+paddingLeft, nextY, remetente)
+	DrawDadosRemetente(pdf, x+paddingLeft, nextY, remetente, false)
 }
 
 func DrawCartaLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, index int, remetente types.SolicitarEtiquetaRemetente, objetoPostal types.SolicitarEtiquetasPDFObjetoPostal, local bool) {
@@ -251,22 +251,22 @@ func DrawCartaLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, index int, re
 
 	//! ==================== REMETENTE ====================
 	remetenteX := 10.5
-	remetenteY := y + 13.0
+	remetenteY := y + 17.0
 	if !colunaEsquerda {
 		remetenteX = x + 8.5
 	}
 	if !linhaInicial {
-		remetenteY = y + 3.0 + paddingTop
+		remetenteY = y + 7.0 + paddingTop
 	}
-	DrawDadosRemetente(pdf, remetenteX, remetenteY, remetente)
+	DrawDadosRemetente(pdf, remetenteX, remetenteY, remetente, true)
 
 	//! ==================== CHANCELA E DATA DE POSTAGEM ====================
 	tipoServicoImagem := findTipoServicoImagemByCodServicoPostagem(objetoPostal.CodigoServicoPostagem)
 	chancelaX := x + 80.0
-	chancelaY := y + 12.0
+	chancelaY := y + 10.0
 
 	if !linhaInicial {
-		chancelaY = y + 7.0 + paddingTop
+		chancelaY = y + 5.0 + paddingTop
 	}
 
 	DrawChancelaCarta(pdf, chancelaX, chancelaY, tipoServicoImagem, local)
@@ -286,14 +286,14 @@ func DrawCartaLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, index int, re
 	DrawDataMatrixCarta(pdf, dataMatrixX, dataMatrixY, dataMatrixBase64String, objetoPostal.IdPrePostagem)
 
 	//! ==================== DESTINATARIO ====================
-	destinatarioX := x + 20.0
+	destinatarioX := x + 22.5
 	destinatarioY := y + 32.0
 
 	if !colunaEsquerda {
-		destinatarioX = x + 18.0
+		destinatarioX = x + 19.5
 	}
 	if !linhaInicial {
 		destinatarioY = y + 22.0 + paddingTop
 	}
-	DrawDadosDestinatario(pdf, destinatarioX, destinatarioY, objetoPostal.Destinatario)
+	DrawDadosDestinatario(pdf, destinatarioX, destinatarioY, objetoPostal.Destinatario, true)
 }
