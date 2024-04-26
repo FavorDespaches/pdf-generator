@@ -481,7 +481,7 @@ func DrawDadosDestinatario(pdf *gofpdf.Fpdf, x, y float64, destinatario types.So
 	lineHeight := 4.0
 
 	if isCarta {
-		fontSize = 8.0
+		fontSize = 8.5
 		lineHeight = 3.0
 
 		pdf.SetFont("Arial", "B", fontSize)
@@ -675,8 +675,8 @@ func DrawDadosRemetente(pdf *gofpdf.Fpdf, x, y float64, remetente types.Solicita
 	lineHeight := 3.5
 
 	if isCarta {
-		fontSize = 7.5
-		lineHeight = 3.0
+		fontSize = 6.0
+		lineHeight = 2.0
 	}
 
 	pdf.SetFont("Arial", "B", fontSize)
