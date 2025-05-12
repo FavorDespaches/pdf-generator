@@ -71,31 +71,21 @@ func DrawDelimiter(pdf *gofpdf.Fpdf, x, y float64) {
 	pdf.Line(labelLeftX, labelBottomY, labelLeftX, labelTopY)
 }
 
-func addImage(pdf *gofpdf.Fpdf, imagePath string, x, y, width, height float64, keepAspectRatio bool) {
-	// Extract the file extension
-	extWithDot := filepath.Ext(imagePath)
-	if len(extWithDot) <= 1 {
-		// Handle the error: file extension is missing or invalid
-		log.Fatalf("Invalid file extension for image: %s", imagePath)
-		return
+func addImage(pdf *gofpdf.Fpdf, imagePath string, x, y, width, height float64, keepAspectRatio bool) error {
+	// Check if file exists
+	if _, err := os.Stat(imagePath); os.IsNotExist(err) {
+		return fmt.Errorf("image file not found: %s", imagePath)
 	}
 
-	// Extract the file extension
-	ext := strings.ToUpper(filepath.Ext(imagePath)[1:])
-
-	// Debugging: Print the imagePath and ImageType
-	// fmt.Printf("Image path: %s, Image type: %s\n", imagePath, ext)
-
-	options := gofpdf.ImageOptions{
-		ReadDpi:   true,
-		ImageType: ext,
+	var imageOption gofpdf.ImageOptions
+	if keepAspectRatio {
+		imageOption = gofpdf.ImageOptions{ImageType: "", ReadDpi: false, AllowNegativePosition: false}
+	} else {
+		imageOption = gofpdf.ImageOptions{ImageType: "", ReadDpi: true, AllowNegativePosition: false}
 	}
 
-	if !keepAspectRatio {
-		height = 0
-	}
-
-	pdf.ImageOptions(imagePath, x, y, width, height, false, options, 0, "")
+	pdf.ImageOptions(imagePath, x, y, width, height, false, imageOption, 0, "")
+	return nil
 }
 
 func addBase64ImageToPDF(pdf *gofpdf.Fpdf, base64String string, x, y, w, h float64) error {
@@ -160,10 +150,39 @@ func DrawFirstRow(pdf *gofpdf.Fpdf, x, y float64, idPrePostagem string, tipoServ
 	//! TIPO SERVIÇO LOGO
 	var tipoServicoImagemPath string
 	if local {
-		tipoServicoImagemPath = filepath.Join("../../layers/images", tipoServicoImagem)
+		// Get workspace root directory (go up one level from current directory)
+		workspaceRoot := filepath.Dir(GetWorkingDir())
+
+		// Try direct path first (assuming we're in pdf-generator/pkg/helpers)
+		tipoServicoImagemPath = filepath.Join(workspaceRoot, "layers/images", tipoServicoImagem)
+		log.Printf("Trying image path: %s", tipoServicoImagemPath)
+
+		// Check if file exists
+		if _, err := os.Stat(tipoServicoImagemPath); os.IsNotExist(err) {
+			log.Printf("WARNING: Image file not found at %s", tipoServicoImagemPath)
+
+			// Try alternate path formats
+			alternativePaths := []string{
+				filepath.Join(workspaceRoot, "layers", "images", tipoServicoImagem),
+				filepath.Join(GetWorkingDir(), "..", "..", "layers", "images", tipoServicoImagem),
+				filepath.Join(GetWorkingDir(), "..", "layers", "images", tipoServicoImagem),
+				filepath.Join("/home/gabriel/Favor/Github/pdf-generator/layers/images", tipoServicoImagem),
+			}
+
+			for _, altPath := range alternativePaths {
+				log.Printf("Trying alternative path: %s", altPath)
+				if _, err := os.Stat(altPath); err == nil {
+					log.Printf("Found image at path: %s", altPath)
+					tipoServicoImagemPath = altPath
+					break
+				}
+			}
+		}
 	} else {
 		tipoServicoImagemPath = filepath.Join("/opt", "bin", "images", tipoServicoImagem)
 	}
+
+	log.Printf("Loading image from: %s", tipoServicoImagemPath)
 
 	keepAspectRatio := false
 	ratio := 1.4
@@ -171,7 +190,11 @@ func DrawFirstRow(pdf *gofpdf.Fpdf, x, y float64, idPrePostagem string, tipoServ
 		keepAspectRatio = true
 		ratio = 1.0
 	}
-	addImage(pdf, tipoServicoImagemPath, tipoServicoX, y, ratio*tipoServicoSize, tipoServicoSize, keepAspectRatio)
+
+	imgErr := addImage(pdf, tipoServicoImagemPath, tipoServicoX, y, ratio*tipoServicoSize, tipoServicoSize, keepAspectRatio)
+	if imgErr != nil {
+		log.Printf("Error adding service type image: %v", imgErr)
+	}
 
 	idPlpX := tipoServicoX - 0.7
 	idPLpY := y + tipoServicoSize + 0.25
@@ -194,11 +217,44 @@ func DrawFirstRow(pdf *gofpdf.Fpdf, x, y float64, idPrePostagem string, tipoServ
 	var favorLogoImagePath string
 	brandingX := dataMatrixX + dataMatrixSize + 0.7*spaceBetween
 	if local {
-		favorLogoImagePath = filepath.Join("../../layers/images", "favor-logo.png")
+		// Get workspace root directory (go up one level from current directory)
+		workspaceRoot := filepath.Dir(GetWorkingDir())
+
+		// Try direct path first
+		favorLogoImagePath = filepath.Join(workspaceRoot, "layers/images", "favor-logo.png")
+		log.Printf("Trying favor logo path: %s", favorLogoImagePath)
+
+		// Check if file exists
+		if _, err := os.Stat(favorLogoImagePath); os.IsNotExist(err) {
+			log.Printf("WARNING: Favor logo image file not found at %s", favorLogoImagePath)
+
+			// Try alternate path formats
+			alternativePaths := []string{
+				filepath.Join(workspaceRoot, "layers", "images", "favor-logo.png"),
+				filepath.Join(GetWorkingDir(), "..", "..", "layers", "images", "favor-logo.png"),
+				filepath.Join(GetWorkingDir(), "..", "layers", "images", "favor-logo.png"),
+				filepath.Join("/home/gabriel/Favor/Github/pdf-generator/layers/images", "favor-logo.png"),
+			}
+
+			for _, altPath := range alternativePaths {
+				log.Printf("Trying alternative path for favor logo: %s", altPath)
+				if _, err := os.Stat(altPath); err == nil {
+					log.Printf("Found favor logo at path: %s", altPath)
+					favorLogoImagePath = altPath
+					break
+				}
+			}
+		}
 	} else {
 		favorLogoImagePath = filepath.Join("/opt", "bin", "images", "favor-logo.png")
 	}
-	addImage(pdf, favorLogoImagePath, brandingX, y, logoWidth, logoHeight, false)
+
+	log.Printf("Loading favor logo from: %s", favorLogoImagePath)
+
+	logoErr := addImage(pdf, favorLogoImagePath, brandingX, y, logoWidth, logoHeight, false)
+	if logoErr != nil {
+		log.Printf("Error adding favor logo image: %v", logoErr)
+	}
 
 	nextY := y + dataMatrixSize
 
@@ -285,13 +341,13 @@ func CreateDatamatrixBaseString(code string, w, h int) string {
 	return base64.StdEncoding.EncodeToString(buf.Bytes())
 }
 
-func DrawTrackingCode(pdf *gofpdf.Fpdf, x, y float64, trackingCode string) float64 {
+func DrawTrackingCode(pdf *gofpdf.Fpdf, x, y float64, trackingCode string, isRightColumn bool) float64 {
 	pdf.SetFont("Arial", "B", 12)
 
 	textWidth := pdf.GetStringWidth(trackingCode)
 	var startX = (labelWidth / 2) - (textWidth / 2)
 
-	if x != 0.0 {
+	if isRightColumn {
 		startX += labelWidth + 6.5
 	}
 
@@ -727,14 +783,46 @@ func DrawChancelaCarta(pdf *gofpdf.Fpdf, x, y float64, tipoServicoImagem string,
 	//! TIPO SERVIÇO LOGO
 	var tipoServicoImagemPath string
 	if local {
-		tipoServicoImagemPath = filepath.Join("../../layers/images", tipoServicoImagem)
+		// Get workspace root directory (go up one level from current directory)
+		workspaceRoot := filepath.Dir(GetWorkingDir())
+
+		// Try direct path first
+		tipoServicoImagemPath = filepath.Join(workspaceRoot, "layers/images", tipoServicoImagem)
+		log.Printf("Trying chancela image path: %s", tipoServicoImagemPath)
+
+		// Check if file exists
+		if _, err := os.Stat(tipoServicoImagemPath); os.IsNotExist(err) {
+			log.Printf("WARNING: Chancela image file not found at %s", tipoServicoImagemPath)
+
+			// Try alternate path formats
+			alternativePaths := []string{
+				filepath.Join(workspaceRoot, "layers", "images", tipoServicoImagem),
+				filepath.Join(GetWorkingDir(), "..", "..", "layers", "images", tipoServicoImagem),
+				filepath.Join(GetWorkingDir(), "..", "layers", "images", tipoServicoImagem),
+				filepath.Join("/home/gabriel/Favor/Github/pdf-generator/layers/images", tipoServicoImagem),
+			}
+
+			for _, altPath := range alternativePaths {
+				log.Printf("Trying alternative path for chancela: %s", altPath)
+				if _, err := os.Stat(altPath); err == nil {
+					log.Printf("Found chancela image at path: %s", altPath)
+					tipoServicoImagemPath = altPath
+					break
+				}
+			}
+		}
 	} else {
 		tipoServicoImagemPath = filepath.Join("/opt", "bin", "images", tipoServicoImagem)
 	}
 
+	log.Printf("Loading chancela image from: %s", tipoServicoImagemPath)
+
 	chancelaX := x
 	chancelaY := y
-	addImage(pdf, tipoServicoImagemPath, chancelaX, chancelaY, tipoServicoSize, tipoServicoSize, true)
+	imgErr := addImage(pdf, tipoServicoImagemPath, chancelaX, chancelaY, tipoServicoSize, tipoServicoSize, true)
+	if imgErr != nil {
+		log.Printf("Error adding chancela image: %v", imgErr)
+	}
 
 	textPaddingTop := 9.5
 	textHeight := 2.5
@@ -786,4 +874,14 @@ func FormatTrackingCode(code string) string {
 func getCurrentDateAsString() string {
 	currentTime := time.Now()
 	return currentTime.Format("02/01/2006")
+}
+
+// GetWorkingDir returns the current working directory
+func GetWorkingDir() string {
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Printf("Error getting working directory: %v", err)
+		return "unknown"
+	}
+	return dir
 }

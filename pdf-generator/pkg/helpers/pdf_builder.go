@@ -4,7 +4,10 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"os"
+	"path/filepath"
 
 	"github.com/FavorDespaches/pdf-generator/pkg/types"
 	"github.com/jung-kurt/gofpdf"
@@ -123,7 +126,28 @@ func GenerateLabelsPDFLocal(solicitarEtiquetasPDF types.SolicitarEtiquetasPDF) e
 	// base64Str := base64.StdEncoding.EncodeToString(buffer.Bytes())
 	// fmt.Printf("%s", base64Str)
 
-	return pdf.OutputFileAndClose("label.pdf")
+	outputFile := "label.pdf"
+	log.Printf("Attempting to save PDF to: %s", outputFile)
+
+	// Try to get write permission to the current directory
+	testFile := "test_write_permission.tmp"
+	if err := ioutil.WriteFile(testFile, []byte("test"), 0644); err != nil {
+		log.Printf("Warning: Cannot write to current directory: %v", err)
+		// Try to use /tmp directory instead
+		outputFile = filepath.Join(os.TempDir(), "label.pdf")
+		log.Printf("Attempting to use alternative location: %s", outputFile)
+	} else {
+		// Clean up test file
+		os.Remove(testFile)
+	}
+
+	err := pdf.OutputFileAndClose(outputFile)
+	if err != nil {
+		return fmt.Errorf("error saving PDF file: %w", err)
+	}
+
+	log.Printf("PDF saved successfully to: %s", outputFile)
+	return nil
 }
 
 func GenerateLabelsPDF(solicitarEtiquetasPDF types.SolicitarEtiquetasPDF) (string, error) {
@@ -216,17 +240,19 @@ func DrawLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, index int, remeten
 	if y == pageHeight/2 {
 		paddingTop = 8.0
 	}
-	paddingLeft := 6.0 + 3.5
+	paddingLeft := 6.0 + 5.0
 	var nextY = y + paddingTop
 
+	// IF YOU WANT TO SEE THE DELIMITER, UNCOMMENT THE LINE BELOW
+	// DrawDelimiter(pdf, x, y)
 	//! LOGO FAVOR, DATAMATRIX, TIPO SERVIÇO LOGO E numero PLP
 	nextY = DrawFirstRow(pdf, x+paddingLeft, nextY, idPrePostagem, tipoServicoImagem, dataMatrixBase64String, local)
 	//! PEDIDO, NF E PESO
 	nextY = DrawSecondRow(pdf, x+paddingLeft, nextY, idPrePostagem, pesoObjeto)
 	//! CÓDIGO DE RASTREIO
-	nextY = DrawTrackingCode(pdf, x, nextY, codRastreio)
+	nextY = DrawTrackingCode(pdf, x+paddingLeft+2.0, nextY, codRastreio, x == 0)
 	//! BARRA DE CÓDIGO
-	nextY = DrawBarcode(pdf, x, nextY, barcodeBase64String)
+	nextY = DrawBarcode(pdf, x+5.0, nextY, barcodeBase64String)
 	//! RECEBEDOR, ASSINATURA e DOCUMENTO
 	nextY = DrawRecebedorAssinaturaDocumentoLines(pdf, x+paddingLeft, nextY)
 	//! SEPARADOR DESTINATÁRIO E LOGO CORREIOS
@@ -235,7 +261,7 @@ func DrawLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, index int, remeten
 	paddingDestinatario := 3.0
 	nextY = DrawDadosDestinatario(pdf, x+paddingLeft+paddingDestinatario, nextY, objetoPostal.Destinatario, false)
 	//! BARRA DE CODIGO DESTINATARIO
-	DrawObservacoes(pdf, x, nextY, objetoPostal.ServicoAdicional)
+	DrawObservacoes(pdf, x+1.0, nextY, objetoPostal.ServicoAdicional)
 	nextY = DrawDestinatarioBarCode(pdf, x+paddingLeft+paddingDestinatario, nextY, destinatarioBarcodeBase64String)
 	//fmt.Printf("nextY DrawSmallSeparadorRemetente %f\n", nextY)
 	//! SEPARADOR REMETENTE
