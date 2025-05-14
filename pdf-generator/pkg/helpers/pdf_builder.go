@@ -250,7 +250,8 @@ func DrawLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, index int, remeten
 	//! PEDIDO, NF E PESO
 	nextY = DrawSecondRow(pdf, x+paddingLeft, nextY, idPrePostagem, pesoObjeto)
 	//! CÓDIGO DE RASTREIO
-	nextY = DrawTrackingCode(pdf, x+paddingLeft+2.0, nextY, codRastreio, x == 0)
+	isRight := x != 0.0
+	nextY = DrawTrackingCode(pdf, x+paddingLeft+2.0, nextY, codRastreio, isRight)
 	//! BARRA DE CÓDIGO
 	nextY = DrawBarcode(pdf, x+5.0, nextY, barcodeBase64String)
 	//! RECEBEDOR, ASSINATURA e DOCUMENTO
