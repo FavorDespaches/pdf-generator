@@ -58,7 +58,7 @@ type SolicitarEtiquetaDestinatario struct {
 	CidadeDestinatario      string  `json:"cidade_destinatario"`      // Cidade do destinatário
 	UfDestinatario          string  `json:"uf_destinatario"`          // Sigla da UF do destinatário
 	CepDestinatario         string  `json:"cep_destinatario"`         // CEP do destinatário
-	NumeroNotaFiscal        *int64  `json:"numero_nota_fiscal"`       // Número da nota fiscal
+	NumeroNotaFiscal        *string `json:"numero_nota_fiscal"`       // Número da nota fiscal
 }
 
 // SolicitarDeclaracaoConteudo represents the content declaration request.

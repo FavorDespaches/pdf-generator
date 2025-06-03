@@ -268,7 +268,9 @@ func DrawLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, index int, remeten
 	//! SEPARADOR REMETENTE
 	nextY = DrawSeparadorRemetente(pdf, x+paddingLeft, nextY)
 	//! DADOS REMETENTE
-	DrawDadosRemetente(pdf, x+paddingLeft, nextY, remetente, false)
+	nextY = DrawDadosRemetente(pdf, x+paddingLeft, nextY, remetente, false)
+	//! NÚMERO DA NOTA FISCAL
+	DrawNumeroNotaFiscal(pdf, x+paddingLeft, nextY, objetoPostal.Destinatario.NumeroNotaFiscal)
 }
 
 func DrawCartaLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, index int, remetente types.SolicitarEtiquetaRemetente, objetoPostal types.SolicitarEtiquetasPDFObjetoPostal, local bool) {

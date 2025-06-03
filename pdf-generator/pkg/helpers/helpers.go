@@ -779,6 +779,18 @@ func DrawDadosRemetente(pdf *gofpdf.Fpdf, x, y float64, remetente types.Solicita
 	return nextY
 }
 
+// ! ========== NÚMERO DA NOTA FISCAL ==========
+func DrawNumeroNotaFiscal(pdf *gofpdf.Fpdf, x, y float64, numeroNotaFiscal *string) {
+	if numeroNotaFiscal == nil {
+		return
+	}
+
+	pdf.SetFont("Arial", "B", 7)
+	pdf.Text(x, y, "NF:")
+	pdf.SetFont("Arial", "", 7)
+	pdf.Text(x+pdf.GetStringWidth("NF: "), y, *numeroNotaFiscal)
+}
+
 func DrawChancelaCarta(pdf *gofpdf.Fpdf, x, y float64, tipoServicoImagem string, local bool) {
 	//! TIPO SERVIÇO LOGO
 	var tipoServicoImagemPath string
