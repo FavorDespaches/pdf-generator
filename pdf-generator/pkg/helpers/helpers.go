@@ -553,8 +553,26 @@ func DrawDadosDestinatario(pdf *gofpdf.Fpdf, x, y float64, destinatario types.So
 	if isCarta {
 		nomeDestinatarioY = y + lineHeight
 	}
+
 	nomeDestinatarioText := translator(destinatario.NomeDestinatario)
+
+	// Adjust font size if name is too long
+	originalFontSize := fontSize
+	availableWidth := labelWidth - paddingRight - paddingDestinatario
+	textWidth := pdf.GetStringWidth(nomeDestinatarioText)
+
+	// Reduce font size if text is too wide
+	adjustedFontSize := originalFontSize
+	for textWidth > availableWidth && adjustedFontSize > 6.0 {
+		adjustedFontSize -= 0.5
+		pdf.SetFont("Arial", "", adjustedFontSize)
+		textWidth = pdf.GetStringWidth(nomeDestinatarioText)
+	}
+
 	pdf.Text(nomeDestinatarioX, nomeDestinatarioY, nomeDestinatarioText)
+
+	// Restore original font size
+	pdf.SetFont("Arial", "", originalFontSize)
 
 	logradouroDestinatarioX := x
 	logradouroDestinatarioY := nomeDestinatarioY + lineHeight
@@ -745,7 +763,24 @@ func DrawDadosRemetente(pdf *gofpdf.Fpdf, x, y float64, remetente types.Solicita
 	nomeRemetentePaddingLeft := 1.0
 	nomeRemetenteX := x + pdf.GetStringWidth("Remetente: ") + nomeRemetentePaddingLeft
 	nomeRemetenteText := translator(remetente.NomeRemetente)
+
+	// Adjust font size if name is too long
+	originalFontSize := fontSize
+	availableWidth := labelWidth - paddingRight - (nomeRemetenteX - x)
+	textWidth := pdf.GetStringWidth(nomeRemetenteText)
+
+	// Reduce font size if text is too wide
+	adjustedFontSize := originalFontSize
+	for textWidth > availableWidth && adjustedFontSize > 4.0 {
+		adjustedFontSize -= 0.5
+		pdf.SetFont("Arial", "", adjustedFontSize)
+		textWidth = pdf.GetStringWidth(nomeRemetenteText)
+	}
+
 	pdf.Text(nomeRemetenteX, nomeRemetenteY, nomeRemetenteText)
+
+	// Restore original font size
+	pdf.SetFont("Arial", "", originalFontSize)
 
 	logradouroRemetenteX := x
 	logradouroRemetenteY := nomeRemetenteY + lineHeight
