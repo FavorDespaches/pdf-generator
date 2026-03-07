@@ -4,8 +4,8 @@ install:
 dev-label:
 	(cd pdf-generator && go run tests/label/label.go)
 
-dev-carta:
-	(cd pdf-generator && go run tests/carta/carta.go)
+dev-carta-simples:
+	(cd pdf-generator && go run tests/carta-simples/carta-simples.go)
 
 build:
 	cd pdf-generator/cmd && \

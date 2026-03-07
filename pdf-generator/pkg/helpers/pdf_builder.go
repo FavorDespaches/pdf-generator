@@ -54,7 +54,7 @@ func separateObjetosPostais(objetos []types.SolicitarEtiquetasPDFObjetoPostal) (
 	return objetosPostaisPadrao, objetosPostaisCartas
 }
 
-func GenerateLabelsPDFLocal(solicitarEtiquetasPDF types.SolicitarEtiquetasPDF) error {
+func GenerateLabelsPDFLocal(solicitarEtiquetasPDF types.SolicitarEtiquetasPDF, outputFilename string) error {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 
 	remetente := solicitarEtiquetasPDF.Remetente
@@ -126,7 +126,7 @@ func GenerateLabelsPDFLocal(solicitarEtiquetasPDF types.SolicitarEtiquetasPDF) e
 	// base64Str := base64.StdEncoding.EncodeToString(buffer.Bytes())
 	// fmt.Printf("%s", base64Str)
 
-	outputFile := "label.pdf"
+	outputFile := outputFilename
 	log.Printf("Attempting to save PDF to: %s", outputFile)
 
 	// Try to get write permission to the current directory
@@ -134,7 +134,7 @@ func GenerateLabelsPDFLocal(solicitarEtiquetasPDF types.SolicitarEtiquetasPDF) e
 	if err := ioutil.WriteFile(testFile, []byte("test"), 0644); err != nil {
 		log.Printf("Warning: Cannot write to current directory: %v", err)
 		// Try to use /tmp directory instead
-		outputFile = filepath.Join(os.TempDir(), "label.pdf")
+		outputFile = filepath.Join(os.TempDir(), outputFilename)
 		log.Printf("Attempting to use alternative location: %s", outputFile)
 	} else {
 		// Clean up test file
