@@ -1,8 +1,11 @@
 install:
 	(cd pdf-generator && go mod download && go mod tidy)
 
-dev:
-	(cd pdf-generator && go run tests/tests.go)
+dev-label:
+	(cd pdf-generator && go run tests/label/label.go)
+
+dev-carta:
+	(cd pdf-generator && go run tests/carta/carta.go)
 
 build:
 	cd pdf-generator/cmd && \
