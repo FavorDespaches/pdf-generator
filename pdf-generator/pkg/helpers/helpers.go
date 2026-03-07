@@ -421,6 +421,34 @@ func DrawRecebedorAssinaturaDocumentoLines(pdf *gofpdf.Fpdf, x, y float64) float
 	return nextY
 }
 
+func DrawRecebedorAssinaturaDocumentoLinesCarta(pdf *gofpdf.Fpdf, x, y, endX float64) {
+	const RECEBEDOR = "Recebedor: "
+	const ASSINATURA = "Assinatura: "
+	const DOCUMENTO = "Documento: "
+
+	pdf.SetFont("Arial", "", 6)
+	lineHeight := 3.5
+
+	//! RECEBEDOR
+	recebedorLineXStart := x + pdf.GetStringWidth(RECEBEDOR)
+	pdf.Text(x, y, RECEBEDOR)
+	pdf.Line(recebedorLineXStart, y, endX, y)
+
+	//! ASSINATURA
+	assinaturaY := y + lineHeight
+	assinaturaLineXStart := x + pdf.GetStringWidth(ASSINATURA)
+	assinaturaLineXEnd := x + (endX-x)/2
+
+	pdf.Text(x, assinaturaY, ASSINATURA)
+	pdf.Line(assinaturaLineXStart, assinaturaY, assinaturaLineXEnd, assinaturaY)
+
+	//! DOCUMENTO
+	documentoX := assinaturaLineXEnd + 1
+	documentoLineXStart := documentoX + pdf.GetStringWidth(DOCUMENTO)
+	pdf.Text(documentoX, assinaturaY, DOCUMENTO)
+	pdf.Line(documentoLineXStart, assinaturaY, endX, assinaturaY)
+}
+
 //-----------------------------------------------------------------
 
 // ! ========== DIVISOR DESTINATÁRIO ==========

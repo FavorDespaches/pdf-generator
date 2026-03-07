@@ -400,6 +400,18 @@ func DrawCartaRegistradaLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, ind
 	// Draw barcode
 	addBase64ImageToPDF(pdf, barcodeBase64String, barcodeX, barcodeY, 50, 12)
 
+	//! ==================== ID (between remetente and destinatário) ====================
+	idX := x + 5.0
+	idY := y + 28.0
+	if !colunaEsquerda {
+		idX = x + 2.0
+	}
+	if !linhaInicial {
+		idY = y + 17.0 + paddingTop
+	}
+	pdf.SetFont("Arial", "B", 7)
+	pdf.Text(idX, idY, "ID: "+objetoPostal.IdPrePostagem)
+
 	//! ==================== DATAMATRIX ====================
 	dataMatrixBase64String := CreateDatamatrixBaseString(objetoPostal.DatamatrixString, 15, 15)
 	dataMatrixX := x + 5.0
@@ -412,7 +424,7 @@ func DrawCartaRegistradaLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, ind
 		dataMatrixY = y + 18.0 + paddingTop
 	}
 
-	DrawDataMatrixCarta(pdf, dataMatrixX, dataMatrixY, dataMatrixBase64String, objetoPostal.IdPrePostagem)
+	addBase64ImageToPDF(pdf, dataMatrixBase64String, dataMatrixX, dataMatrixY, 15, 15)
 
 	//! ==================== DESTINATARIO ====================
 	destinatarioX := x + 22.5
@@ -424,5 +436,13 @@ func DrawCartaRegistradaLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, ind
 	if !linhaInicial {
 		destinatarioY = y + 22.0 + paddingTop
 	}
-	DrawDadosDestinatario(pdf, destinatarioX, destinatarioY, objetoPostal.Destinatario, true)
+	nextY := DrawDadosDestinatario(pdf, destinatarioX, destinatarioY, objetoPostal.Destinatario, true)
+
+	//! ==================== RECEBEDOR / ASSINATURA / DOCUMENTO ====================
+	lineX := x + 5.0
+	if !colunaEsquerda {
+		lineX = x + 2.0
+	}
+	lineEndX := x + cartaWidth
+	DrawRecebedorAssinaturaDocumentoLinesCarta(pdf, lineX, nextY+1.0, lineEndX)
 }
