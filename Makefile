@@ -7,6 +7,9 @@ dev-label:
 dev-carta-simples:
 	(cd pdf-generator && go run tests/carta-simples/carta-simples.go)
 
+dev-carta-registrada:
+	(cd pdf-generator && go run tests/carta-registrada/carta-registrada.go)
+
 build:
 	cd pdf-generator/cmd && \
 	GOARCH=arm64 GOOS=linux go build -o bootstrap main.go && \

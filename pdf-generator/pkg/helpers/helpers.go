@@ -48,6 +48,7 @@ const (
 	SEDEX_HOJE_FILEPATH       = "sedex-hoje.png"
 	MINI_ENVIOS_FILEPATH      = "mini-envios.png"
 	CARTA_SIMPLES_FILEPATH    = "carta-simples.png"
+	CARTA_REGISTRADA_FILEPATH = "carta-registrada.png"
 )
 
 func DrawDelimiter(pdf *gofpdf.Fpdf, x, y float64) {
@@ -133,6 +134,8 @@ func findTipoServicoImagemByCodServicoPostagem(codServicoPostagem string) string
 		tipoServicoImagem = SEDEX_HOJE_FILEPATH
 	case "80160":
 		tipoServicoImagem = CARTA_SIMPLES_FILEPATH
+	case "80195":
+		tipoServicoImagem = CARTA_REGISTRADA_FILEPATH
 	default:
 		log.Fatalf("CÓDIGO %s NÃO IMPLEMENTADO", codServicoPostagem)
 		panic("Código não implementado!")
