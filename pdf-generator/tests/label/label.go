@@ -11,7 +11,7 @@ import (
 func main() {
 	solicitarEtiquetasPDF := types.SolicitarEtiquetasPDF{
 		Remetente: types.SolicitarEtiquetaRemetente{
-			NomeRemetente:        "Empresa Exemplo",
+			NomeRemetente:        "SMITH KLIMB BRASIL COM IMPORT",
 			LogradouroRemetente:  "Rua Exemplo",
 			NumeroRemetente:      "123",
 			ComplementoRemetente: ptrToString("Apto 101"),
@@ -28,7 +28,7 @@ func main() {
 				CodigoServicoPostagem: "03298",
 				CodigoRastreio:        "BR123456789XX",
 				Destinatario: types.SolicitarEtiquetaDestinatario{
-					NomeDestinatario:        "Cliente Final",
+					NomeDestinatario:        "SMITH KLIMB BRASIL COM IMPORT",
 					TelefoneDestinatario:    ptrToString("11987654321"),
 					LogradouroDestinatario:  "Rua do Cliente",
 					ComplementoDestinatario: ptrToString("Casa 2"),
