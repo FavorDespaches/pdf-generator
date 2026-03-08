@@ -150,7 +150,7 @@ func main() {
 	fmt.Println("Starting PDF generation test...")
 	fmt.Println("Working directory: ", helpers.GetWorkingDir())
 
-	err := helpers.GenerateLabelsPDFLocal(solicitarEtiquetasPDF)
+	err := helpers.GenerateLabelsPDFLocal(solicitarEtiquetasPDF, "label.pdf")
 	if err != nil {
 		log.Fatalf("ERRO AO TRANSFORMAR PDF EM BASE64STRING: %v", err)
 	} else {
