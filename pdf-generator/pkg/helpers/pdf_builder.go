@@ -32,38 +32,40 @@ func chunkifyObjetosPostais(objetos []types.SolicitarEtiquetasPDFObjetoPostal, c
 	return chunks
 }
 
-func separateObjetosPostais(objetos []types.SolicitarEtiquetasPDFObjetoPostal) ([]types.SolicitarEtiquetasPDFObjetoPostal, []types.SolicitarEtiquetasPDFObjetoPostal) {
-	objetosPostaisCartas := make([]types.SolicitarEtiquetasPDFObjetoPostal, 0)
+func separateObjetosPostais(objetos []types.SolicitarEtiquetasPDFObjetoPostal) (
+	[]types.SolicitarEtiquetasPDFObjetoPostal,
+	[]types.SolicitarEtiquetasPDFObjetoPostal,
+	[]types.SolicitarEtiquetasPDFObjetoPostal,
+) {
 	objetosPostaisPadrao := make([]types.SolicitarEtiquetasPDFObjetoPostal, 0)
-	codigosServicosPostagemCarta := []string{"80160"}
-
-	// Create a map for efficient checking against service codes
-	serviceCodeMap := make(map[string]bool)
-	for _, code := range codigosServicosPostagemCarta {
-		serviceCodeMap[code] = true
-	}
+	objetosPostaisCartaSimples := make([]types.SolicitarEtiquetasPDFObjetoPostal, 0)
+	objetosPostaisCartaRegistrada := make([]types.SolicitarEtiquetasPDFObjetoPostal, 0)
 
 	for _, objeto := range objetos {
-		if _, found := serviceCodeMap[objeto.CodigoServicoPostagem]; found {
-			objetosPostaisCartas = append(objetosPostaisCartas, objeto)
-		} else {
+		switch objeto.CodigoServicoPostagem {
+		case "80160":
+			objetosPostaisCartaSimples = append(objetosPostaisCartaSimples, objeto)
+		case "80799":
+			objetosPostaisCartaRegistrada = append(objetosPostaisCartaRegistrada, objeto)
+		default:
 			objetosPostaisPadrao = append(objetosPostaisPadrao, objeto)
 		}
 	}
 
-	return objetosPostaisPadrao, objetosPostaisCartas
+	return objetosPostaisPadrao, objetosPostaisCartaSimples, objetosPostaisCartaRegistrada
 }
 
-func GenerateLabelsPDFLocal(solicitarEtiquetasPDF types.SolicitarEtiquetasPDF) error {
+func GenerateLabelsPDFLocal(solicitarEtiquetasPDF types.SolicitarEtiquetasPDF, outputFilename string) error {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 
 	remetente := solicitarEtiquetasPDF.Remetente
-	objetosPostaisPadrao, objetosPostaisCartas := separateObjetosPostais(solicitarEtiquetasPDF.ObjetosPostais)
+	objetosPostaisPadrao, objetosPostaisCartas, objetosPostaisCartaRegistrada := separateObjetosPostais(solicitarEtiquetasPDF.ObjetosPostais)
 
 	chunkifiedObjetosPostaisPadrao := chunkifyObjetosPostais(objetosPostaisPadrao, 4)
 	chunkifiedObjetosPostaisCarta := chunkifyObjetosPostais(objetosPostaisCartas, 10)
+	chunkifiedObjetosPostaisCartaRegistrada := chunkifyObjetosPostais(objetosPostaisCartaRegistrada, 10)
 
-	fmt.Println(" - Número de Páginas do PDF: ", len(chunkifiedObjetosPostaisPadrao)+len(chunkifiedObjetosPostaisCarta))
+	fmt.Println(" - Número de Páginas do PDF: ", len(chunkifiedObjetosPostaisPadrao)+len(chunkifiedObjetosPostaisCarta)+len(chunkifiedObjetosPostaisCartaRegistrada))
 
 	//! CONSTRUINDO AS ETIQUETAS NORMAIS
 	if len(objetosPostaisPadrao) != 0 {
@@ -86,31 +88,47 @@ func GenerateLabelsPDFLocal(solicitarEtiquetasPDF types.SolicitarEtiquetasPDF) e
 		}
 	}
 
+	cartaSubdivisionStartPoints := []struct{ x, y float64 }{
+		{0, 0},
+		{pageWidth / 2, 0},
+		{0, 1 * pageHeight / 5},
+		{pageWidth / 2, 1 * pageHeight / 5},
+		{0, 2 * pageHeight / 5},
+		{pageWidth / 2, 2 * pageHeight / 5},
+		{0, 3 * pageHeight / 5},
+		{pageWidth / 2, 3 * pageHeight / 5},
+		{0, 4 * pageHeight / 5},
+		{pageWidth / 2, 4 * pageHeight / 5},
+	}
+
 	if len(objetosPostaisCartas) != 0 {
 		pdf.SetMargins(0, 0, 0)
 		pdf.SetAutoPageBreak(false, 0)
-		//! CONSTRUINDO AS ETIQUETAS DE CARTA
+		//! CONSTRUINDO AS ETIQUETAS DE CARTA SIMPLES
 		for k, objetoPostalCartaChunk := range chunkifiedObjetosPostaisCarta {
 			fmt.Println("   - Desenhando a página ", k)
 			pdf.AddPage()
 
-			subdivisionStartPoints := []struct{ x, y float64 }{
-				{0, 0},
-				{pageWidth / 2, 0},
-				{0, 1 * pageHeight / 5},
-				{pageWidth / 2, 1 * pageHeight / 5},
-				{0, 2 * pageHeight / 5},
-				{pageWidth / 2, 2 * pageHeight / 5},
-				{0, 3 * pageHeight / 5},
-				{pageWidth / 2, 3 * pageHeight / 5},
-				{0, 4 * pageHeight / 5},
-				{pageWidth / 2, 4 * pageHeight / 5},
-			}
-
 			for i, objetoPostal := range objetoPostalCartaChunk {
 				fmt.Println("     - Desenhando a carta ", i+1)
-				startPoint := subdivisionStartPoints[i]
+				startPoint := cartaSubdivisionStartPoints[i]
 				DrawCartaLabel(pdf, startPoint.x, startPoint.y, cartaWidth, cartaHeight, i, remetente, objetoPostal, true)
+			}
+		}
+	}
+
+	if len(objetosPostaisCartaRegistrada) != 0 {
+		pdf.SetMargins(0, 0, 0)
+		pdf.SetAutoPageBreak(false, 0)
+		//! CONSTRUINDO AS ETIQUETAS DE CARTA REGISTRADA
+		for k, objetoPostalCartaRegistradaChunk := range chunkifiedObjetosPostaisCartaRegistrada {
+			fmt.Println("   - Desenhando a página ", k)
+			pdf.AddPage()
+
+			for i, objetoPostal := range objetoPostalCartaRegistradaChunk {
+				fmt.Println("     - Desenhando a carta registrada ", i+1)
+				startPoint := cartaSubdivisionStartPoints[i]
+				DrawCartaRegistradaLabel(pdf, startPoint.x, startPoint.y, cartaWidth, cartaHeight, i, remetente, objetoPostal, true)
 			}
 		}
 	}
@@ -126,7 +144,7 @@ func GenerateLabelsPDFLocal(solicitarEtiquetasPDF types.SolicitarEtiquetasPDF) e
 	// base64Str := base64.StdEncoding.EncodeToString(buffer.Bytes())
 	// fmt.Printf("%s", base64Str)
 
-	outputFile := "label.pdf"
+	outputFile := outputFilename
 	log.Printf("Attempting to save PDF to: %s", outputFile)
 
 	// Try to get write permission to the current directory
@@ -134,7 +152,7 @@ func GenerateLabelsPDFLocal(solicitarEtiquetasPDF types.SolicitarEtiquetasPDF) e
 	if err := ioutil.WriteFile(testFile, []byte("test"), 0644); err != nil {
 		log.Printf("Warning: Cannot write to current directory: %v", err)
 		// Try to use /tmp directory instead
-		outputFile = filepath.Join(os.TempDir(), "label.pdf")
+		outputFile = filepath.Join(os.TempDir(), outputFilename)
 		log.Printf("Attempting to use alternative location: %s", outputFile)
 	} else {
 		// Clean up test file
@@ -154,12 +172,13 @@ func GenerateLabelsPDF(solicitarEtiquetasPDF types.SolicitarEtiquetasPDF) (strin
 	pdf := gofpdf.New("P", "mm", "A4", "")
 
 	remetente := solicitarEtiquetasPDF.Remetente
-	objetosPostaisPadrao, objetosPostaisCartas := separateObjetosPostais(solicitarEtiquetasPDF.ObjetosPostais)
+	objetosPostaisPadrao, objetosPostaisCartas, objetosPostaisCartaRegistrada := separateObjetosPostais(solicitarEtiquetasPDF.ObjetosPostais)
 
 	chunkifiedObjetosPostaisPadrao := chunkifyObjetosPostais(objetosPostaisPadrao, 4)
 	chunkifiedObjetosPostaisCarta := chunkifyObjetosPostais(objetosPostaisCartas, 10)
+	chunkifiedObjetosPostaisCartaRegistrada := chunkifyObjetosPostais(objetosPostaisCartaRegistrada, 10)
 
-	fmt.Println(" - Número de Páginas do PDF: ", len(chunkifiedObjetosPostaisPadrao)+len(chunkifiedObjetosPostaisCarta))
+	fmt.Println(" - Número de Páginas do PDF: ", len(chunkifiedObjetosPostaisPadrao)+len(chunkifiedObjetosPostaisCarta)+len(chunkifiedObjetosPostaisCartaRegistrada))
 
 	if len(objetosPostaisPadrao) != 0 {
 		for k, objetoPostalChunk := range chunkifiedObjetosPostaisPadrao {
@@ -181,31 +200,47 @@ func GenerateLabelsPDF(solicitarEtiquetasPDF types.SolicitarEtiquetasPDF) (strin
 		}
 	}
 
+	cartaSubdivisionStartPoints := []struct{ x, y float64 }{
+		{0, 0},
+		{pageWidth / 2, 0},
+		{0, 1 * pageHeight / 5},
+		{pageWidth / 2, 1 * pageHeight / 5},
+		{0, 2 * pageHeight / 5},
+		{pageWidth / 2, 2 * pageHeight / 5},
+		{0, 3 * pageHeight / 5},
+		{pageWidth / 2, 3 * pageHeight / 5},
+		{0, 4 * pageHeight / 5},
+		{pageWidth / 2, 4 * pageHeight / 5},
+	}
+
 	if len(objetosPostaisCartas) != 0 {
 		pdf.SetMargins(0, 0, 0)
 		pdf.SetAutoPageBreak(false, 0)
-		//! CONSTRUINDO AS ETIQUETAS DE CARTA
+		//! CONSTRUINDO AS ETIQUETAS DE CARTA SIMPLES
 		for k, objetoPostalCartaChunk := range chunkifiedObjetosPostaisCarta {
 			fmt.Println("   - Desenhando a página ", k)
 			pdf.AddPage()
 
-			subdivisionStartPoints := []struct{ x, y float64 }{
-				{0, 0},
-				{pageWidth / 2, 0},
-				{0, 1 * pageHeight / 5},
-				{pageWidth / 2, 1 * pageHeight / 5},
-				{0, 2 * pageHeight / 5},
-				{pageWidth / 2, 2 * pageHeight / 5},
-				{0, 3 * pageHeight / 5},
-				{pageWidth / 2, 3 * pageHeight / 5},
-				{0, 4 * pageHeight / 5},
-				{pageWidth / 2, 4 * pageHeight / 5},
-			}
-
 			for i, objetoPostal := range objetoPostalCartaChunk {
 				fmt.Println("     - Desenhando a carta ", i+1)
-				startPoint := subdivisionStartPoints[i]
+				startPoint := cartaSubdivisionStartPoints[i]
 				DrawCartaLabel(pdf, startPoint.x, startPoint.y, cartaWidth, cartaHeight, i, remetente, objetoPostal, false)
+			}
+		}
+	}
+
+	if len(objetosPostaisCartaRegistrada) != 0 {
+		pdf.SetMargins(0, 0, 0)
+		pdf.SetAutoPageBreak(false, 0)
+		//! CONSTRUINDO AS ETIQUETAS DE CARTA REGISTRADA
+		for k, objetoPostalCartaRegistradaChunk := range chunkifiedObjetosPostaisCartaRegistrada {
+			fmt.Println("   - Desenhando a página ", k)
+			pdf.AddPage()
+
+			for i, objetoPostal := range objetoPostalCartaRegistradaChunk {
+				fmt.Println("     - Desenhando a carta registrada ", i+1)
+				startPoint := cartaSubdivisionStartPoints[i]
+				DrawCartaRegistradaLabel(pdf, startPoint.x, startPoint.y, cartaWidth, cartaHeight, i, remetente, objetoPostal, false)
 			}
 		}
 	}
@@ -325,4 +360,89 @@ func DrawCartaLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, index int, re
 		destinatarioY = y + 22.0 + paddingTop
 	}
 	DrawDadosDestinatario(pdf, destinatarioX, destinatarioY, objetoPostal.Destinatario, true)
+}
+
+func DrawCartaRegistradaLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, index int, remetente types.SolicitarEtiquetaRemetente, objetoPostal types.SolicitarEtiquetasPDFObjetoPostal, local bool) {
+	colunaEsquerda := x == 0
+	linhaInicial := y == 0
+	paddingTop := 9.0
+
+	//! ==================== REMETENTE ====================
+	remetenteX := 10.5
+	remetenteY := y + 17.0
+	if !colunaEsquerda {
+		remetenteX = x + 8.5
+	}
+	if !linhaInicial {
+		remetenteY = y + 7.0 + paddingTop
+	}
+	DrawDadosRemetente(pdf, remetenteX, remetenteY, remetente, true)
+
+	//! ==================== CÓDIGO DE RASTREIO E CÓDIGO DE BARRAS ====================
+	trackingCode := FormatTrackingCode(objetoPostal.CodigoRastreio)
+	barcodeBase64String := CreateBarcodeBaseString(50, 12, objetoPostal.CodigoRastreio)
+
+	barcodeX := x + 55.0
+	barcodeY := y + 16.0
+	trackingCodeY := y + 14.0
+
+	if !linhaInicial {
+		barcodeY = y + 11.0 + paddingTop
+		trackingCodeY = y + 9.0 + paddingTop
+	}
+
+	// Draw tracking code text centered above the barcode
+	pdf.SetFont("Arial", "B", 8)
+	trackingCodeWidth := pdf.GetStringWidth(trackingCode)
+	trackingCodeX := barcodeX + (50.0-trackingCodeWidth)/2.0
+	pdf.Text(trackingCodeX, trackingCodeY, trackingCode)
+
+	// Draw barcode
+	addBase64ImageToPDF(pdf, barcodeBase64String, barcodeX, barcodeY, 50, 12)
+
+	//! ==================== ID (between remetente and destinatário) ====================
+	idX := x + 5.0
+	idY := y + 28.0
+	if !colunaEsquerda {
+		idX = x + 2.0
+	}
+	if !linhaInicial {
+		idY = y + 17.0 + paddingTop
+	}
+	pdf.SetFont("Arial", "B", 7)
+	pdf.Text(idX, idY, "ID: "+objetoPostal.IdPrePostagem)
+
+	//! ==================== DATAMATRIX ====================
+	dataMatrixBase64String := CreateDatamatrixBaseString(objetoPostal.DatamatrixString, 15, 15)
+	dataMatrixX := x + 5.0
+	dataMatrixY := y + 29.0
+
+	if !colunaEsquerda {
+		dataMatrixX = x + 2.0
+	}
+	if !linhaInicial {
+		dataMatrixY = y + 18.0 + paddingTop
+	}
+
+	addBase64ImageToPDF(pdf, dataMatrixBase64String, dataMatrixX, dataMatrixY, 15, 15)
+
+	//! ==================== DESTINATARIO ====================
+	destinatarioX := x + 22.5
+	destinatarioY := y + 32.0
+
+	if !colunaEsquerda {
+		destinatarioX = x + 19.5
+	}
+	if !linhaInicial {
+		destinatarioY = y + 22.0 + paddingTop
+	}
+	nextY := DrawDadosDestinatario(pdf, destinatarioX, destinatarioY, objetoPostal.Destinatario, true)
+
+	//! ==================== RECEBEDOR / ASSINATURA / DOCUMENTO ====================
+	lineX := x + 5.0
+	if !colunaEsquerda {
+		lineX = x + 2.0
+	}
+	lineEndX := x + cartaWidth
+	DrawRecebedorAssinaturaDocumentoLinesCarta(pdf, lineX, nextY+1.0, lineEndX)
 }

@@ -48,6 +48,7 @@ const (
 	SEDEX_HOJE_FILEPATH       = "sedex-hoje.png"
 	MINI_ENVIOS_FILEPATH      = "mini-envios.png"
 	CARTA_SIMPLES_FILEPATH    = "carta-simples.png"
+	CARTA_REGISTRADA_FILEPATH = "carta-registrada.png"
 )
 
 func DrawDelimiter(pdf *gofpdf.Fpdf, x, y float64) {
@@ -133,6 +134,8 @@ func findTipoServicoImagemByCodServicoPostagem(codServicoPostagem string) string
 		tipoServicoImagem = SEDEX_HOJE_FILEPATH
 	case "80160":
 		tipoServicoImagem = CARTA_SIMPLES_FILEPATH
+	case "80799":
+		tipoServicoImagem = CARTA_REGISTRADA_FILEPATH
 	default:
 		log.Fatalf("CÓDIGO %s NÃO IMPLEMENTADO", codServicoPostagem)
 		panic("Código não implementado!")
@@ -416,6 +419,34 @@ func DrawRecebedorAssinaturaDocumentoLines(pdf *gofpdf.Fpdf, x, y float64) float
 	nextY := documentoY + recebedorAssinaturaPaddingBottom
 
 	return nextY
+}
+
+func DrawRecebedorAssinaturaDocumentoLinesCarta(pdf *gofpdf.Fpdf, x, y, endX float64) {
+	const RECEBEDOR = "Recebedor: "
+	const ASSINATURA = "Assinatura: "
+	const DOCUMENTO = "Documento: "
+
+	pdf.SetFont("Arial", "", 6)
+	lineHeight := 3.5
+
+	//! RECEBEDOR
+	recebedorLineXStart := x + pdf.GetStringWidth(RECEBEDOR)
+	pdf.Text(x, y, RECEBEDOR)
+	pdf.Line(recebedorLineXStart, y, endX, y)
+
+	//! ASSINATURA
+	assinaturaY := y + lineHeight
+	assinaturaLineXStart := x + pdf.GetStringWidth(ASSINATURA)
+	assinaturaLineXEnd := x + (endX-x)/2
+
+	pdf.Text(x, assinaturaY, ASSINATURA)
+	pdf.Line(assinaturaLineXStart, assinaturaY, assinaturaLineXEnd, assinaturaY)
+
+	//! DOCUMENTO
+	documentoX := assinaturaLineXEnd + 1
+	documentoLineXStart := documentoX + pdf.GetStringWidth(DOCUMENTO)
+	pdf.Text(documentoX, assinaturaY, DOCUMENTO)
+	pdf.Line(documentoLineXStart, assinaturaY, endX, assinaturaY)
 }
 
 //-----------------------------------------------------------------
