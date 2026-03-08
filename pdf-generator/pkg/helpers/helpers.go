@@ -134,7 +134,7 @@ func findTipoServicoImagemByCodServicoPostagem(codServicoPostagem string) string
 		tipoServicoImagem = SEDEX_HOJE_FILEPATH
 	case "80160":
 		tipoServicoImagem = CARTA_SIMPLES_FILEPATH
-	case "80195":
+	case "80799":
 		tipoServicoImagem = CARTA_REGISTRADA_FILEPATH
 	default:
 		log.Fatalf("CÓDIGO %s NÃO IMPLEMENTADO", codServicoPostagem)

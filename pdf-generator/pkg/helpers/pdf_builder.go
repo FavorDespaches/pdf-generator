@@ -45,7 +45,7 @@ func separateObjetosPostais(objetos []types.SolicitarEtiquetasPDFObjetoPostal) (
 		switch objeto.CodigoServicoPostagem {
 		case "80160":
 			objetosPostaisCartaSimples = append(objetosPostaisCartaSimples, objeto)
-		case "80195":
+		case "80799":
 			objetosPostaisCartaRegistrada = append(objetosPostaisCartaRegistrada, objeto)
 		default:
 			objetosPostaisPadrao = append(objetosPostaisPadrao, objeto)

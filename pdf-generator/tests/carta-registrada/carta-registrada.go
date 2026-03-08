@@ -11,7 +11,7 @@ import (
 func newCartaRegistrada(id string, nomeDestinatario string, logradouro string, numero string, bairro string, cidade string, uf string, cep string, codigoRastreio string) types.SolicitarEtiquetasPDFObjetoPostal {
 	return types.SolicitarEtiquetasPDFObjetoPostal{
 		IdPrePostagem:         id,
-		CodigoServicoPostagem: "80195",
+		CodigoServicoPostagem: "80799",
 		CodigoRastreio:        codigoRastreio,
 		Destinatario: types.SolicitarEtiquetaDestinatario{
 			NomeDestinatario:        nomeDestinatario,
@@ -33,7 +33,7 @@ func newCartaRegistrada(id string, nomeDestinatario string, logradouro string, n
 			DimensaoDiametro:    0.0,
 		},
 		Peso:             20,
-		DatamatrixString: "13560520000371228222000037851AA123456789BB2501190000000123456789801950100037Residencial Eden 300050000000000000-00.000000-00.000000|",
+		DatamatrixString: "13560520000371228222000037851AA123456789BB2501190000000123456789807990100037Residencial Eden 300050000000000000-00.000000-00.000000|",
 	}
 }
 
