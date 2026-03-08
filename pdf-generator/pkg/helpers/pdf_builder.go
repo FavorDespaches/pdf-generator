@@ -387,8 +387,8 @@ func DrawCartaRegistradaLabel(pdf *gofpdf.Fpdf, x, y, width, height float64, ind
 	trackingCodeY := y + 14.0
 
 	if !linhaInicial {
-		barcodeY = y + 11.0 + paddingTop
-		trackingCodeY = y + 9.0 + paddingTop
+		barcodeY = y + 7.0 + paddingTop
+		trackingCodeY = y + 5.0 + paddingTop
 	}
 
 	// Draw tracking code text centered above the barcode
